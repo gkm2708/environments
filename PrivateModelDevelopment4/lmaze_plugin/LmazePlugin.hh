@@ -38,15 +38,17 @@ class LmazePlugin : public WorldPlugin {
 	    float scaleX = 0.05;
 	    float scaleY = 0.05;
 	    float groundOffset;
-
+	int goal_i = -1;
+	int goal_j = -1;
 	    float floorHeight = 0.025; 		// should be equal to z axis scaling of cube for Wall Model; currently "0.05"
 	    float floorThickness = 0.001; 	// should be equal to z axis scaling of cube for floor Model; currently "0.0155"
-
+	    bool goalRandom = False;
 	    physics::WorldPtr World;
 	    physics::ModelPtr Model;
 		
 	    std::string maze_filename = "/homes/gkumar/rl/PrivateModelDevelopment4/sample_labyrinth_maze.mz";
-
+	
+	void rnd();
 	    void Load(physics::WorldPtr _parent, sdf::ElementPtr _sdf);
 	    void loadSDF(/*sdf::ElementPtr base_link*/);
 
