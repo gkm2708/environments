@@ -612,7 +612,57 @@ namespace gazebo
 	
 // add the goal colission for ball
 
+
+
+
 		if(goal_i != -1 && goal_j != -1 ){
+		    return link_tag_Outer
+            +"LinkMainBasement"
+            + link_tag_Outer1
+            + pose
+            + link_tag_Outer2
+            + tempSDF
+            + link_tag_Outer10
+            + "<joint name='JointBasementSphere' type='fixed'><parent>LinkBaseBoard</parent><child>LinkMainBasement</child></joint>"
+            + link_tag_Outer
+            + "LinkGoalBasement"
+            + link_tag_Outer1
+					+ "0 0 0 0 0 0"
+            + link_tag_Outer2
+            	+ colission_tag_until_name
+	            	+ "GoalBasementCollision"
+	            + colission_tag_until_pose
+            	    + std::to_string((goal_i-0.5-(MAZE_SIZE)/2)*scaleY) + " "
+            	    + std::to_string((goal_j-0.5-(MAZE_SIZE)/2)*scaleX) + " "
+	                + std::to_string(groundOffset+2*cradius+3*floorThickness/2+floorHeight) 
+                    + " 0 0 0"
+	            + colission_tag_until_uri
+	            	+ "/homes/gkumar/rl/PrivateModelDevelopment2/models/cube.dae"
+	            + colission_tag_until_scale
+	                + std::to_string(scaleX) + std::to_string(scaleY) + std::to_string(floorThickness)				// +floorThickness/10
+	            + colission_tag_until_end
+                + visual_tag_until_name
+	            	+ "GoalBasementVisual"
+	            + visual_tag_until_pose
+            	    + std::to_string((goal_i-0.5-(MAZE_SIZE)/2)*scaleY) + " "
+            	    + std::to_string((goal_j-0.5-(MAZE_SIZE)/2)*scaleX) + " "
+	                + std::to_string(groundOffset+2*cradius+3*floorThickness/2+floorHeight) 
+                    + " 0 0 0"
+	            + visual_tag_until_uri
+                    + "/homes/gkumar/rl/PrivateModelDevelopment2/models/cubePit.dae"
+	            + visual_tag_until_scale
+                    + std::to_string(scaleX) + std::to_string(scaleY) + std::to_string(floorThickness)                                                             // size
+	            + visual_tag_until_material
+                    + "White"
+	            + visual_tag_until_end
+            + link_tag_Outer10
+            + "<joint name='JointBasementGoal' type='fixed'><parent>LinkBaseBoard</parent><child>LinkGoalBasement</child></joint>";
+
+
+
+
+/*
+
 		    return link_tag_Outer
             +"LinkMainBasement"
             + link_tag_Outer1
@@ -649,12 +699,26 @@ namespace gazebo
                     + "/homes/gkumar/rl/PrivateModelDevelopment2/models/cube.dae"
 	            + visual_tag_until_scale
                     + std::to_string(scaleX) + std::to_string(scaleY) + std::to_string(floorThickness)                                                             // size
-	            + visual_tag_until_material
-                    + "Blue"
-	            + visual_tag_until_end
+	            + "</scale>\
+	            </mesh> \
+	            </geometry> \
+	            <material> \
+	            <lighting>1</lighting> \
+	            <script> \
+	            <uri>/homes/gkumar/rl/PrivateModelDevelopment2/models/goal/materials/scripts/goalMaterial.material</uri> \
+	            <name>goal/Image</name> \
+	            </script> \
+	            <shader type='pixel'/> \
+	            </material> \
+	            <transparency>0</transparency> \
+	            <cast_shadows>0</cast_shadows> \
+	            </visual>"
             + link_tag_Outer10
             + "<joint name='JointBasementGoal' type='fixed'><parent>LinkBaseBoard</parent><child>LinkGoalBasement</child></joint>";
 
+
+
+*/
 //	                              std::to_string((i-MAZE_SIZE/2-0.5)*scaleX) + " "
 //	                            + std::to_string((j-MAZE_SIZE/2-0.5)*scaleY) + " "                                                   // Pose
 //	                            + std::to_string(floorThickness/2+floorHeight/2) + " 0 0 0";

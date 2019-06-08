@@ -51,7 +51,7 @@ void ContactPlugin::OnUpdate()
 		//std::list<float> torqueVal;
 		if(contacts.contact(i).collision2() == "ground_plane::link::collision" 
 			|| contacts.contact(i).collision2() == "LMAZE::LinkBaseBoard::BASEMENT_COLISSION_BASE") {
-			reward3Dstamped.vector.x = -0.01; 
+			reward3Dstamped.vector.x = -0.1; 
 			reward3Dstamped.vector.y = 0;
 			reward3Dstamped.vector.z = 0;
 		}
