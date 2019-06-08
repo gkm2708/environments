@@ -492,8 +492,8 @@ namespace gazebo
 	    std::string pose_3d = "";
 	    std::string line = "";
 	    std::fstream fs;
-		int goal_i = -1;
-		int goal_j = -1;
+		//int goal_i = -1;
+		//int goal_j = -1;
 	
 	
 		// ++++++++++++++++++++++++++++++++++++++++++++++++++++++   REDEFINE VARIABLES FOR MAZE BASE   +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -637,7 +637,7 @@ namespace gazebo
 			// call randomize goal position and set variable plus message
 
 
-			int i = rnd();
+			rnd();
 
 
 			// change color of this tile
@@ -673,6 +673,7 @@ namespace gazebo
 	// 
 
 	void LmazePlugin::rnd(){
+		goalRandom = True;
 			std::list<int> temp;
 			std::random_device dev;
 		    std::mt19937 rng(dev());
@@ -687,12 +688,12 @@ namespace gazebo
 			}
 
 			temp = _blanks.front();
-			pos_i = temp.front();
+			goal_i = temp.front();
 			temp.pop_front();
-			pos_j = temp.front();
+			goal_j = temp.front();
 
-            gzmsg  << "Goal position not found !!!!!!!!" << random << " " << pos_i << " " << pos_j << std::endl;
-			return pos_i;
+            gzmsg  << "Goal position not found !!!!!!!!" << random << " " << goal_i << " " << goal_j << std::endl;
+			//return pos_i;
 	}
 
     // ******************************************************************************************************
@@ -701,11 +702,10 @@ namespace gazebo
 
 
 	void LmazePlugin::OnReset(const std_msgs::Bool::ConstPtr& msg){
-
-		// if goal position is randomized then again randomize
-
-		// else simple reset
-
+		if(goalRandom){
+			rnd();
+			// change color of the tile
+		}
 	    bool resetMsg = msg->data;
 
   		std_msgs::Bool resetStatus;
