@@ -54,7 +54,7 @@ class LmazeControllerPlugin : public ModelPlugin {
 	    void QueueThread() ;
 	    void QueueThread1() ;
 	    void QueueThread2() ;
-
+    	math::Vector3 gcTorque;
 	    physics::JointControllerPtr jointController;
 
 	    event::ConnectionPtr updateConnectionOn;

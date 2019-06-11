@@ -11,6 +11,8 @@ CMakeFiles/ball_controller_plugin.dir/ball_plugin/BallControllerPlugin.cc.o
  /opt/ros/kinetic/include/geometry_msgs/Pose.h
  /opt/ros/kinetic/include/geometry_msgs/PoseStamped.h
  /opt/ros/kinetic/include/geometry_msgs/Quaternion.h
+ /opt/ros/kinetic/include/geometry_msgs/Vector3.h
+ /opt/ros/kinetic/include/geometry_msgs/Vector3Stamped.h
  /opt/ros/kinetic/include/ros/advertise_options.h
  /opt/ros/kinetic/include/ros/advertise_service_options.h
  /opt/ros/kinetic/include/ros/assert.h

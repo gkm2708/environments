@@ -25,6 +25,12 @@
 #include <gazebo/transport/transport.hh>
 #include <gazebo/msgs/msgs.hh>
 #include <random>
+#include "ros/ros.h"
+#include <thread>
+#include "ros/callback_queue.h"
+#include "ros/subscribe_options.h"
+#include "geometry_msgs/PoseStamped.h"
+
 
 using namespace std;
 
@@ -68,29 +74,20 @@ void BallPlugin::Load(physics::WorldPtr _parent, sdf::ElementPtr _sdf){
             <transparency>0</transparency> \
             <cast_shadows>0</cast_shadows> \
             </visual> \
-			<sensor name='my_contact' type='contact'> \
-        	    <update_rate>30.0</update_rate> \
-			  		<contact> \
-				    	<collision>collision</collision> \
-			        </contact> \
-					<plugin name='my_plugin' filename='/homes/gkumar/rl/PrivateModelDevelopment4/build/libcontact.so'> \
-		        	    <update_rate>30.0</update_rate> \
-					</plugin> \
-        	   </sensor> \
 			</link>";
 
 
 
 /*
-
-
-
-            
-
-
-
-
-			
+<sensor name='my_contact' type='contact'> \
+        	    <update_rate>30.0</update_rate> \
+			  		<contact> \
+				    	<collision>collision</collision> \
+			        </contact> \
+					<plugin name='my_plugin' filename='/homes/gkumar/rl/PrivateModelDevelopment4/build/libcontact.so'> \
+		        	    <update_rate>0</update_rate> \
+					</plugin> \
+        	   </sensor> \
 
 */
     ending_tag = "<plugin name='ball_controller_plugin' filename='/homes/gkumar/rl/PrivateModelDevelopment4/build/libball_controller_plugin.so'> \
@@ -184,9 +181,38 @@ void BallPlugin::Load(physics::WorldPtr _parent, sdf::ElementPtr _sdf){
 
 		    updateConnectionOn = event::Events::ConnectWorldReset(boost::bind(&BallPlugin::OnWorldReset, this));
 		}
-    } else {gzmsg << "filestream error";}
+    } else {gzmsg << "filestream error" << std::endl;}
 	fs.close();
+
+
+    //  ################## ROS Node #############################
+    if (!ros::isInitialized()) {
+          int argc = 0;
+          char **argv = NULL;
+          ros::init(argc, argv, "BC",ros::init_options::NoSigintHandler);
+     }
+	this->rosNode.reset(new ros::NodeHandle("CP"));
+
+	ros::SubscribeOptions so = ros::SubscribeOptions::create<geometry_msgs::Vector3>("/LP/goalPos",1,boost::bind(&BallPlugin::OnReset, this, _1),ros::VoidPtr(), &this->rosQueue);
+	this->rosSub = this->rosNode->subscribe(so);
+	this->rosQueueThread =  thread(std::bind(&BallPlugin::QueueThread, this));
+
+
 }
+
+void BallPlugin::OnReset(const geometry_msgs::Vector3::ConstPtr& msg){
+    goal_i = (int)msg->x; 	
+    goal_j = (int)msg->y;  
+}
+
+void BallPlugin::QueueThread()
+	{
+	    static const double timeout = 0.01;
+	    while (this->rosNode->ok())
+	    {
+	        this->rosQueue.callAvailable(ros::WallDuration(timeout));
+	    }
+	}
 
 void BallPlugin::OnWorldReset(){
 
@@ -209,13 +235,18 @@ void BallPlugin::OnWorldReset(){
 	temp.pop_front();
 	pos_j = temp.front();
 
-    gzmsg  << "!!!! " << random << " " << pos_i << " " << pos_j << std::endl;
-
-	Model = World->GetModel("BALL");
-	Model->SetWorldPose( math::Pose( 	(MAZE_SIZE-2*pos_i)*scaleX/2 - scaleX/2, 
+	if(pos_i != goal_i && pos_j != goal_j){
+		Model = World->GetModel("BALL");
+		Model->SetWorldPose( math::Pose( 	(MAZE_SIZE-2*pos_i)*scaleX/2 - scaleX/2, 
 										(MAZE_SIZE-2*pos_j)*scaleY/2 - scaleY/2, 
 										MAZE_SIZE*scaleX+2*cradius+2*floorThickness+floorHeight+0.005+0.005,
 										0, 0, 0 ) );
+
+	}else {OnWorldReset();}
+
+
+    //gzmsg  << " Random ball pos " << pos_i << " " << pos_j << std::endl;
+
 }
 
 

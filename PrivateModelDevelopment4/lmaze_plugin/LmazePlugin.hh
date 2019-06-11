@@ -10,6 +10,14 @@
 #include <thread>
 #include "ros/callback_queue.h"
 #include "ros/subscribe_options.h"
+#include "gazebo/msgs/msgs.hh"
+#include "gazebo/transport/TransportTypes.hh"
+#include "geometry_msgs/Vector3.h"
+#include "geometry_msgs/PoseStamped.h"
+#include <thread>
+#include "ros/callback_queue.h"
+#include "ros/subscribe_options.h"
+#include "geometry_msgs/Vector3Stamped.h"
 
 using namespace std;
 
@@ -20,6 +28,8 @@ class LmazePlugin : public WorldPlugin {
 
 	private: 
 		std::unique_ptr<ros::NodeHandle> rosNode;
+
+
 		ros::Subscriber rosSub;
 		ros::Subscriber rosSub1;
 		ros::Subscriber rosSub2;
@@ -32,7 +42,10 @@ class LmazePlugin : public WorldPlugin {
 		thread rosQueueThread1;
 		thread rosQueueThread2;
 
+
 	public :
+		transport::NodePtr gzNode;
+    	math::Vector3 ballPose;
 	    int MAZE_SIZE = 0;
 	    double cradius = 0.006;
 	    float scaleX = 0.05;
@@ -42,9 +55,15 @@ class LmazePlugin : public WorldPlugin {
 	    float floorHeight = 0.025; 		// should be equal to z axis scaling of cube for Wall Model; currently "0.05"
 	    float floorThickness = 0.001; 	// should be equal to z axis scaling of cube for floor Model; currently "0.0155"
 
+		int goal_i = -1;
+		int goal_j = -1;
+		bool goalRandom = 0;
+
+		void rnd();
+	    void OnBallUpdate(const geometry_msgs::PoseStamped::ConstPtr& msg);
 	    physics::WorldPtr World;
 	    physics::ModelPtr Model;
-		
+		    std::list<std::list<int>> blanks;
 	    std::string maze_filename = "/homes/gkumar/rl/PrivateModelDevelopment4/sample_labyrinth_maze.mz";
 
 	    void Load(physics::WorldPtr _parent, sdf::ElementPtr _sdf);
@@ -65,9 +84,14 @@ class LmazePlugin : public WorldPlugin {
 	    std::string drawKinObj(std::string pose);
 	    std::string drawCylObj(std::string pose);
 
-
+	    void OnWorldUpdateBegin();
 		ros::NodeHandle nh;
 		ros::Publisher pub;
+		ros::Publisher pubGoal;
+		ros::Publisher pubReward;
+		transport::PublisherPtr visualPub;
+
+    	event::ConnectionPtr updateConnectionOn;
 };
 }
 

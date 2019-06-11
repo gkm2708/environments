@@ -53,9 +53,26 @@ void BallControllerPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
           char **argv = NULL;
           ros::init(argc, argv, "BC",ros::init_options::NoSigintHandler);
      }
+	//this->rosNode.reset(new ros::NodeHandle("CP"));
+
+	//ros::SubscribeOptions so = ros::SubscribeOptions::create<geometry_msgs::Vector3>("/LP/goalPos",1,boost::bind(&BallControllerPlugin::OnReset, this, _1),ros::VoidPtr(), &this->rosQueue);
+	//this->rosSub = this->rosNode->subscribe(so);
+	//this->rosQueueThread =  thread(std::bind(&BallControllerPlugin::QueueThread, this));
 
     updateConnectionOn = event::Events::ConnectWorldUpdateBegin(boost::bind(&BallControllerPlugin::OnWorldUpdateBegin, this));
 	pub = nh.advertise<geometry_msgs::PoseStamped>("/BC/pose", 1);
+
+  	/*pubReward = nh.advertise<geometry_msgs::Vector3Stamped>("/BC/reward", 1);
+	std::fstream fs;
+
+    fs.open(maze_filename, std::fstream::in);
+
+    if (fs.good()) {
+
+        std::string line;
+        std::getline(fs, line);
+        MAZE_SIZE = line.size();
+	}*/
 }
 
 void BallControllerPlugin::OnWorldUpdateBegin(){
@@ -75,7 +92,44 @@ void BallControllerPlugin::OnWorldUpdateBegin(){
 
 	pub.publish(pose_stamped);
 
+
+  	/*geometry_msgs::Vector3Stamped reward3Dstamped;
+
+ 	reward3Dstamped.vector.x = 0;
+	reward3Dstamped.vector.y = 0;
+	reward3Dstamped.vector.z = 0;
+
+	if(pose_stamped.pose.position.x <= ((MAZE_SIZE-2*goal_i)*scaleX/2) && 
+		pose_stamped.pose.position.x >= ((MAZE_SIZE-2*goal_i-2)*scaleX/2) &&
+		pose_stamped.pose.position.y <= ((MAZE_SIZE-2*goal_j)*scaleY/2) &&
+		pose_stamped.pose.position.y >= ((MAZE_SIZE-2*goal_j-2)*scaleY/2) ){
+
+ 	reward3Dstamped.vector.x = 1.0;
+	reward3Dstamped.vector.y = 0;
+	reward3Dstamped.vector.z = 0;
+	//gzmsg << "2" << std::endl;
+
+	}
+
+	reward3Dstamped.header.stamp = ros::Time::now();
+	pubReward.publish(reward3Dstamped);*/
+
 }
+
+void BallControllerPlugin::QueueThread()
+	{
+	    static const double timeout = 0.01;
+	    while (this->rosNode->ok())
+	    {
+	        this->rosQueue.callAvailable(ros::WallDuration(timeout));
+	    }
+	}
+
+/*void BallControllerPlugin::OnReset(const geometry_msgs::Vector3::ConstPtr& msg){
+    goal_i = (int)msg->x; 	
+    goal_j = (int)msg->y;  
+
+}*/
 
 // Register this plugin with the simulator
 GZ_REGISTER_MODEL_PLUGIN(BallControllerPlugin)

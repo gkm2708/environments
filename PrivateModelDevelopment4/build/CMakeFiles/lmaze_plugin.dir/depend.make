@@ -6,6 +6,12 @@ CMakeFiles/lmaze_plugin.dir/lmaze_plugin/LmazePlugin.cc.o: ../lmaze_plugin/Lmaze
 CMakeFiles/lmaze_plugin.dir/lmaze_plugin/LmazePlugin.cc.o: /opt/ros/kinetic/include/boost_161_condition_variable.h
 CMakeFiles/lmaze_plugin.dir/lmaze_plugin/LmazePlugin.cc.o: /opt/ros/kinetic/include/boost_161_pthread_condition_variable.h
 CMakeFiles/lmaze_plugin.dir/lmaze_plugin/LmazePlugin.cc.o: /opt/ros/kinetic/include/boost_161_pthread_condition_variable_fwd.h
+CMakeFiles/lmaze_plugin.dir/lmaze_plugin/LmazePlugin.cc.o: /opt/ros/kinetic/include/geometry_msgs/Point.h
+CMakeFiles/lmaze_plugin.dir/lmaze_plugin/LmazePlugin.cc.o: /opt/ros/kinetic/include/geometry_msgs/Pose.h
+CMakeFiles/lmaze_plugin.dir/lmaze_plugin/LmazePlugin.cc.o: /opt/ros/kinetic/include/geometry_msgs/PoseStamped.h
+CMakeFiles/lmaze_plugin.dir/lmaze_plugin/LmazePlugin.cc.o: /opt/ros/kinetic/include/geometry_msgs/Quaternion.h
+CMakeFiles/lmaze_plugin.dir/lmaze_plugin/LmazePlugin.cc.o: /opt/ros/kinetic/include/geometry_msgs/Vector3.h
+CMakeFiles/lmaze_plugin.dir/lmaze_plugin/LmazePlugin.cc.o: /opt/ros/kinetic/include/geometry_msgs/Vector3Stamped.h
 CMakeFiles/lmaze_plugin.dir/lmaze_plugin/LmazePlugin.cc.o: /opt/ros/kinetic/include/ros/advertise_options.h
 CMakeFiles/lmaze_plugin.dir/lmaze_plugin/LmazePlugin.cc.o: /opt/ros/kinetic/include/ros/advertise_service_options.h
 CMakeFiles/lmaze_plugin.dir/lmaze_plugin/LmazePlugin.cc.o: /opt/ros/kinetic/include/ros/assert.h
@@ -65,6 +71,7 @@ CMakeFiles/lmaze_plugin.dir/lmaze_plugin/LmazePlugin.cc.o: /opt/ros/kinetic/incl
 CMakeFiles/lmaze_plugin.dir/lmaze_plugin/LmazePlugin.cc.o: /opt/ros/kinetic/include/ros/wall_timer_options.h
 CMakeFiles/lmaze_plugin.dir/lmaze_plugin/LmazePlugin.cc.o: /opt/ros/kinetic/include/rosconsole/macros_generated.h
 CMakeFiles/lmaze_plugin.dir/lmaze_plugin/LmazePlugin.cc.o: /opt/ros/kinetic/include/std_msgs/Bool.h
+CMakeFiles/lmaze_plugin.dir/lmaze_plugin/LmazePlugin.cc.o: /opt/ros/kinetic/include/std_msgs/Header.h
 CMakeFiles/lmaze_plugin.dir/lmaze_plugin/LmazePlugin.cc.o: /opt/ros/kinetic/include/std_msgs/String.h
 CMakeFiles/lmaze_plugin.dir/lmaze_plugin/LmazePlugin.cc.o: /opt/ros/kinetic/include/xmlrpcpp/XmlRpcDecl.h
 CMakeFiles/lmaze_plugin.dir/lmaze_plugin/LmazePlugin.cc.o: /opt/ros/kinetic/include/xmlrpcpp/XmlRpcValue.h

@@ -22,6 +22,15 @@
 #include "std_msgs/Bool.h"
 #include "std_msgs/String.h"
 #include "ros/ros.h"
+#include "gazebo/msgs/msgs.hh"
+#include "gazebo/transport/TransportTypes.hh"
+#include "gazebo/transport/TransportIface.hh"
+#include "geometry_msgs/PoseStamped.h"
+
+#include <thread>
+#include "ros/callback_queue.h"
+#include "ros/subscribe_options.h"
+#include "geometry_msgs/Vector3Stamped.h"
 
 #if GAZEBO_MAJOR_VERSION >= 8
 namespace math = ignition::math;
@@ -50,17 +59,20 @@ namespace gazebo
 
 	void LmazePlugin::Load(physics::WorldPtr _parent, sdf::ElementPtr _sdf){
 
+		this->gzNode = transport::NodePtr(new transport::Node());
+		this->gzNode->Init();
+		gzmsg << this->gzNode->GetId() << std::endl;
+		visualPub = this->gzNode->Advertise<msgs::Visual>("/gazebo/default/visual");
+		gzmsg << visualPub << std::endl;
+
     	World = _parent;
 
     	loadSDF();
 
-    	gzmsg << "Load LMaze Model" << std::endl;
-
 		if (!ros::isInitialized())	{
 	        int argc = 0;
 	        char **argv = NULL;
-	        ros::init(argc, argv, "LP",
-                  ros::init_options::NoSigintHandler);
+	        ros::init(argc, argv, "LP",ros::init_options::NoSigintHandler);
 	    }
 
 
@@ -74,12 +86,80 @@ namespace gazebo
 	    this->rosSub1 = this->rosNode->subscribe(so1);
 	    this->rosQueueThread1 =  thread(std::bind(&LmazePlugin::QueueThread1, this));*/
 
+	    ros::SubscribeOptions so2 = ros::SubscribeOptions::create<geometry_msgs::PoseStamped>("/BC/pose",1,boost::bind(&LmazePlugin::OnBallUpdate, this, _1),ros::VoidPtr(), &this->rosQueue2);
+	    this->rosSub2 = this->rosNode->subscribe(so2);
+	    this->rosQueueThread2 =  thread(std::bind(&LmazePlugin::QueueThread2, this));
+
+
 		pub = nh.advertise<std_msgs::Bool>("/LP/reset", 1);
+		pubGoal = nh.advertise<geometry_msgs::Vector3>("/LP/goalPos", 1);
+  		pubReward = nh.advertise<geometry_msgs::Vector3Stamped>("/LP/reward", 1);
+
+		if(goal_i == -1 && goal_j == -1 ){
+
+			goalRandom = 1;
+			rnd();
+
+		}
+	    updateConnectionOn = event::Events::ConnectWorldUpdateBegin(boost::bind(&LmazePlugin::OnWorldUpdateBegin, this));
+    	gzmsg << "Load LMaze Model" << std::endl;
 	}
 
 
 
 
+
+void LmazePlugin::QueueThread2()
+{
+  static const double timeout = 0.01;
+  while (this->rosNode->ok())
+  {
+    this->rosQueue2.callAvailable(ros::WallDuration(timeout));
+  }
+}
+
+void LmazePlugin::OnBallUpdate(const geometry_msgs::PoseStamped::ConstPtr& msg){
+	//ROS_INFO(" New Ball Pose ");
+
+	ballPose.x = msg->pose.position.x;
+	ballPose.y = msg->pose.position.y;
+	ballPose.z = msg->pose.position.z;
+    //link->AddTorque(gcTorque);
+}
+
+
+void LmazePlugin::OnWorldUpdateBegin(){
+    //gzmsg << "LmazePlugin OnWorldUpdateBegin" << std::endl;
+
+  	geometry_msgs::Vector3Stamped reward3Dstamped;
+
+
+	if(ballPose.x <= ((MAZE_SIZE-2*goal_i)*scaleX/2) && 
+		ballPose.x >= ((MAZE_SIZE-2*goal_i-2)*scaleX/2) &&
+		ballPose.y <= ((MAZE_SIZE-2*goal_j)*scaleY/2) &&
+		ballPose.y >= ((MAZE_SIZE-2*goal_j-2)*scaleY/2) ){
+
+	//gzmsg << " goal " << std::endl;
+ 	reward3Dstamped.vector.x = 1.0;
+	reward3Dstamped.vector.y = 0;
+	reward3Dstamped.vector.z = 0;
+	reward3Dstamped.header.stamp = ros::Time::now();
+	pubReward.publish(reward3Dstamped);
+	//World->SetPaused(1);
+	//std::this_thread::sleep_for(2);
+	//World->Reset();
+	//World->SetPaused(0);
+
+	} else {
+ 	reward3Dstamped.vector.x = 0;
+	reward3Dstamped.vector.y = 0;
+	reward3Dstamped.vector.z = 0;
+	reward3Dstamped.header.stamp = ros::Time::now();
+	pubReward.publish(reward3Dstamped);
+	}
+
+
+}
 
     // ******************************************************************************************************
     // ********************************************** LOAD SDF **********************************************
@@ -106,41 +186,20 @@ namespace gazebo
     	    fs.close();
 
     	    tempSDF = tempSDF + drawKinObj("0 0 0.0005 0 -0 0");                                                           // a kinematic only object with no physics for the base
-			//tempSDF = tempSDF + drawCylObj("0 0 "+std::to_string(MAZE_SIZE*3/8*scaleX)+" 0 -0 0");                                                           // a kinematic only object with no physics for the base
-    	    tempSDF = tempSDF + drawJointSphere(); 																		// draw a sphere at the center of cylinder
 
-			
-    	    /*tempSDF = tempSDF + drawBaseBoard(std::to_string(MAZE_SIZE*scaleX/2) + " "
-    	                                     + std::to_string(MAZE_SIZE*scaleY/2) + " "
-    	                                     + std::to_string(groundOffset+2*cradius+floorThickness/2)
-    	                                     + " 0 -0 0"); 																// draw basement and walls evenly*/
+    	    tempSDF = tempSDF + drawJointSphere(); 																		// draw a sphere at the center of cylinder
 
 			tempSDF = tempSDF + drawBaseBoard("0 0 "
     	                                     + std::to_string(groundOffset+2*cradius+floorThickness/2)
     	                                     + " 0 -0 0"); 																// draw basement and walls evenly
 
-
-
     	    tempSDF = tempSDF + drawBasement("0 0 "
     	                                     + std::to_string(groundOffset+2*cradius+floorThickness+floorHeight/2)
     	                                     + " 0 -0 0"); 																// draw basement and walls evenly
 			
-			/*
-
-    	    tempSDF = tempSDF + drawBasement(std::to_string(MAZE_SIZE*scaleX/2) + " "
-    	                                     + std::to_string(MAZE_SIZE*scaleY/2) + " "
-    	                                     + std::to_string(groundOffset+2*cradius+floorThickness+floorHeight/2)
-    	                                     + " 0 -0 0"); 																// draw basement and walls evenly
-			*/
-
 	        sdf::SDF unitSDF;
+
     	    unitSDF.SetFromString(starting_tag 
-			/*						+ "<pose>" 
-									+ std::to_string(MAZE_SIZE*scaleX/2) + " "
-    	                            + std::to_string(MAZE_SIZE*scaleY/2) + " "
-    	                            + std::to_string(groundOffset+2*cradius+floorThickness/2)
-    	                            + " 0 -0 0"
-									+ "</pose>"		*/ 
 									+ tempSDF 
 									+ ending_tag);
     	    World->InsertModelSDF(unitSDF);
@@ -220,6 +279,14 @@ namespace gazebo
         std::string link_tag_until_cradius1 =	"</radius> \
             </sphere> \
             </geometry> \
+			<surface> \
+	        <friction> \
+	          <ode> \
+	            <mu>0.01</mu> \
+	            <mu2>0.01</mu2> \
+	          </ode> \
+	        </friction> \
+	        </surface> \
             </collision> \
             <visual name='visual'> \
             <geometry> \
@@ -300,6 +367,14 @@ namespace gazebo
     	std::string colission_tag_until_end = "</size>\
             </box> \
             </geometry> \
+			<surface> \
+	        <friction> \
+	          <ode> \
+	            <mu>0.01</mu> \
+	            <mu2>0.01</mu2> \
+	          </ode> \
+	        </friction> \
+	        </surface> \
             </collision>";
 			// Finally add closing tag to decare it as one link
     	std::string link_tag_Outer10 = "</link>";
@@ -398,6 +473,14 @@ namespace gazebo
     	std::string colission_tag_until_end = "</size>\
             </box> \
             </geometry> \
+			<surface> \
+	        <friction> \
+	          <ode> \
+	            <mu>0.01</mu> \
+	            <mu2>0.01</mu2> \
+	          </ode> \
+	        </friction> \
+	        </surface> \
             </collision>";
 			// FInally add closing tag to decare it as one link
     	std::string link_tag_Outer10 = "</link>";
@@ -483,6 +566,14 @@ namespace gazebo
 	    colission_tag_until_end = "</scale>\
 	            </mesh> \
 	            </geometry> \
+				<surface> \
+	        <friction> \
+	          <ode> \
+	            <mu>0.01</mu> \
+	            <mu2>0.01</mu2> \
+	          </ode> \
+	        </friction> \
+	        </surface> \
 	            </collision>";
 	
 	    // Maze Links
@@ -492,8 +583,8 @@ namespace gazebo
 	    std::string pose_3d = "";
 	    std::string line = "";
 	    std::fstream fs;
-		int goal_i = -1;
-		int goal_j = -1;
+		//int goal_i = -1;
+		//int goal_j = -1;
 	
 	
 		// ++++++++++++++++++++++++++++++++++++++++++++++++++++++   REDEFINE VARIABLES FOR MAZE BASE   +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -523,13 +614,7 @@ namespace gazebo
 	                if (line.at(j) == '|' || line.at(j) == '_'){
 	                    resource_uri = "/homes/gkumar/rl/PrivateModelDevelopment4/models/cube.dae";
 	                    scale_xyz = std::to_string(scaleX) + std::to_string(scaleY) + std::to_string(floorHeight);
-	                    /*pose_3d =
-	                              std::to_string((i-MAZE_SIZE/2-0.5)*scaleX) + " "
-	                            + std::to_string((j-MAZE_SIZE/2-0.5)*scaleY) + " "                                                   // Pose
-	                            + std::to_string(floorThickness/2+floorHeight/2) + " 0 0 0";*/
-
-	                    pose_3d =
-	                              std::to_string((MAZE_SIZE-2*i)*scaleX/2 - scaleX) + " "
+	                    pose_3d = std::to_string((MAZE_SIZE-2*i)*scaleX/2 - scaleX) + " "
 	                            + std::to_string((MAZE_SIZE-2*j)*scaleY/2 - scaleY) + " "                                                   // Pose
 	                            + std::to_string(floorThickness/2+floorHeight/2) + " 0 0 0";
 
@@ -559,25 +644,12 @@ namespace gazebo
 	                } else if (line.at(j) == 'O'){
 	                    resource_uri = "/homes/gkumar/rl/PrivateModelDevelopment4/models/cubePit.dae";
 	                    scale_xyz = std::to_string(scaleX) + std::to_string(scaleY) + std::to_string(floorThickness);
-	                    pose_3d =
-	                              std::to_string((MAZE_SIZE-2*i)*scaleX/2 - scaleX) + " "
+	                    pose_3d = std::to_string((MAZE_SIZE-2*i)*scaleX/2 - scaleX) + " "
 	                            + std::to_string((MAZE_SIZE-2*j)*scaleY/2 - scaleY) + " "                                                   // Pose
 	                            + std::to_string(floorThickness/2+floorHeight/2) + " 0 0 0";
-	                    /*pose_3d =
-	                              std::to_string((i-MAZE_SIZE/2-0.5)*scaleX) + " "
-	                            + std::to_string((j-MAZE_SIZE/2-0.5)*scaleY) + " "                                                   // Pose
-	                            + std::to_string(floorThickness/2+floorHeight/2) + " 0 0 0";*/
-	                    material = "White";
-	                /*tempSDF = tempSDF
-	                        + colission_tag_until_name
-	                                + link_name + std::to_string(i) + "_" + std::to_string(MAZE_SIZE-1-j)
-	                        + colission_tag_until_pose
-	                                + pose_3d
-	                        + colission_tag_until_uri
-	                                + resource_uri
-	                        + colission_tag_until_scale
-	                                + scale_xyz
-	                        + colission_tag_until_end
+
+	                    material = "Yellow";
+	                	tempSDF = tempSDF
 	                        + visual_tag_until_name
 	                                + link_name + std::to_string(i) + "_" + std::to_string(j)
 	                        + visual_tag_until_pose
@@ -588,21 +660,44 @@ namespace gazebo
 	                                + scale_xyz                                                             // size
 	                        + visual_tag_until_material
 	                                + material
-	                        + visual_tag_until_end;*/
-	                } else if (line.at(j) == 'S' || line.at(j) == ' ' || line.at(j) == 'X'){
-	                    resource_uri = "/homes/gkumar/rl/PrivateModelDevelopment4/models/cube.dae";
+	                        + visual_tag_until_end;
+	                } else if (line.at(j) == 'X'){
+	                    resource_uri = "/homes/gkumar/rl/PrivateModelDevelopment4/models/cubePit.dae";
 	                    scale_xyz = std::to_string(scaleX) + std::to_string(scaleY) + std::to_string(floorThickness);
-	                    pose_3d =
-	                              std::to_string((MAZE_SIZE-2*i)*scaleX/2 - scaleX) + " "
+	                    pose_3d = std::to_string((MAZE_SIZE-2*i)*scaleX/2 - scaleX) + " "
 	                            + std::to_string((MAZE_SIZE-2*j)*scaleY/2 - scaleY) + " "                                                   // Pose
 	                            + std::to_string(floorThickness/2+floorHeight/2) + " 0 0 0";
-	                    material = "White";
-						if ( line.at(j) == 'X' ) {
+
 		                    material = "Blue";
 							goal_i = i;
 							goal_j = j;
+
+			                tempSDF = tempSDF
+	                        + visual_tag_until_name
+	                                + link_name + std::to_string(i) + "_" + std::to_string(j)
+	                        + visual_tag_until_pose
+	                                + pose_3d
+	                        + visual_tag_until_uri
+	                                + resource_uri
+	                        + visual_tag_until_scale
+	                                + scale_xyz                                                             // size
+	                        + visual_tag_until_material
+	                                + material
+	                        + visual_tag_until_end;
+	                } else if (line.at(j) == 'S' || line.at(j) == ' ' || line.at(j) == 'X'){
+	                    resource_uri = "/homes/gkumar/rl/PrivateModelDevelopment4/models/cube.dae";
+	                    scale_xyz = std::to_string(scaleX) + std::to_string(scaleY) + std::to_string(floorThickness);
+	                    pose_3d = std::to_string((MAZE_SIZE-2*i)*scaleX/2 - scaleX) + " "
+	                            + std::to_string((MAZE_SIZE-2*j)*scaleY/2 - scaleY) + " "                                                   // Pose
+	                            + std::to_string(floorThickness/2+floorHeight/2) + " 0 0 0";
+	                    material = "White";
+						if ( line.at(j) == ' ' ) {
+							std::list<int> temp;
+							temp.push_back(i);
+							temp.push_back(j);
+							blanks.push_back(temp);					
 						}
-	                tempSDF = tempSDF
+		                tempSDF = tempSDF
 	                        + colission_tag_until_name
 	                                + link_name + std::to_string(i) + "_" + std::to_string(MAZE_SIZE-1-j)
 	                        + colission_tag_until_pose
@@ -626,25 +721,8 @@ namespace gazebo
 	                }
 	            }
 	        }
-	    }
+	    
 	
-	
-// add the goal colission for ball
-
-		if(goal_i == -1 && goal_j == -1 ){
-			// To bring under common color changing architecture
-
-			// call randomize goal position and set variable plus message
-
-
-			int i = rnd();
-
-
-			// change color of this tile
-			// publish goal position message
-
-			// and set variable
-
 		    return link_tag_Outer
     	        +"LinkMainBasement"
     	        + link_tag_Outer1
@@ -669,30 +747,134 @@ namespace gazebo
 	}
 
 
-	// build randomization function
-	// 
+
+	 
 
 	void LmazePlugin::rnd(){
+
+
+			std::string name = "LMAZE::LinkMainBasement::Base_Tiles"+std::to_string(goal_i)+"_"+std::to_string(goal_j);
+			msgs::Visual visualMsg;
+  			visualMsg.set_name(name);
+  			visualMsg.set_parent_name(World->GetName());
+    		visualMsg.set_transparency(0);
+
+			// Initiate material
+        	if ((!visualMsg.has_material()) || visualMsg.mutable_material() == NULL) {
+            	gazebo::msgs::Material *materialMsg = new gazebo::msgs::Material;
+            	visualMsg.set_allocated_material(materialMsg);
+        	}
+
+
+        	// Set color
+        	gazebo::common::Color newColor(1, 1, 1, 0);
+        	gazebo::msgs::Color *colorMsg = new gazebo::msgs::Color(gazebo::msgs::Convert(newColor));
+        	gazebo::msgs::Color *diffuseMsg = new gazebo::msgs::Color(*colorMsg);
+
+	        gazebo::msgs::Material *materialMsg = visualMsg.mutable_material();
+     	   if (materialMsg->has_ambient())
+     	   {
+     	     materialMsg->clear_ambient();
+     	   }
+     	   materialMsg->set_allocated_ambient(colorMsg);
+     	   if (materialMsg->has_diffuse())
+     	   {
+     	     materialMsg->clear_diffuse();
+     	   }
+     	   materialMsg->set_allocated_diffuse(diffuseMsg);
+  			visualPub->Publish(visualMsg);
+
+
+
+
+
+
+
+
+
 			std::list<int> temp;
 			std::random_device dev;
 		    std::mt19937 rng(dev());
-		    std::uniform_int_distribution<std::mt19937::result_type> dist6(1,blanks.size());
+		    std::uniform_int_distribution<std::mt19937::result_type> dist6(0,blanks.size());
 			int random = dist6(rng);
 
 		    std::list<std::list<int>> _blanks;
 			_blanks = blanks;
+			//gzmsg << random << std::endl;
 
-			for(int i = 1; i < random; i++) {
+			for(int i = 0; i < random-1; i++) {
 				_blanks.pop_front();
+				//temp = _blanks.front();
+				//int temp_i = temp.front();
+				//temp.pop_front();
+				//int temp_j = temp.front();
+
+				//gzmsg << temp_i << " " << temp_j << std::endl; 
 			}
 
 			temp = _blanks.front();
-			pos_i = temp.front();
+			goal_i = temp.front();
 			temp.pop_front();
-			pos_j = temp.front();
+			goal_j = temp.front();
 
-            gzmsg  << "Goal position not found !!!!!!!!" << random << " " << pos_i << " " << pos_j << std::endl;
-			return pos_i;
+
+
+
+
+
+
+
+		  	geometry_msgs::Vector3 goalPos;
+		 	goalPos.x = goal_i;
+			goalPos.y = goal_j;
+			goalPos.z = 0;
+
+			pubGoal.publish(goalPos);
+
+
+
+
+
+
+
+
+			std::string name_ = "LMAZE::LinkMainBasement::Base_Tiles"+std::to_string(goal_i)+"_"+std::to_string(goal_j);
+			msgs::Visual visualMsg_;
+  			visualMsg_.set_name(name_);
+  			visualMsg_.set_parent_name(World->GetName());
+    		visualMsg_.set_transparency(0);
+
+			// Initiate material
+        	if ((!visualMsg_.has_material()) || visualMsg_.mutable_material() == NULL) {
+            	gazebo::msgs::Material *materialMsg_ = new gazebo::msgs::Material;
+            	visualMsg_.set_allocated_material(materialMsg_);
+        	}
+
+
+        	// Set color
+        	gazebo::common::Color newColor_(0, 0, 1, 0);
+        	gazebo::msgs::Color *colorMsg_ = new gazebo::msgs::Color(gazebo::msgs::Convert(newColor_));
+        	gazebo::msgs::Color *diffuseMsg_ = new gazebo::msgs::Color(*colorMsg_);
+
+	        gazebo::msgs::Material *materialMsg_ = visualMsg_.mutable_material();
+     	   if (materialMsg_->has_ambient())
+     	   {
+     	     materialMsg_->clear_ambient();
+     	   }
+     	   materialMsg_->set_allocated_ambient(colorMsg_);
+     	   if (materialMsg_->has_diffuse())
+     	   {
+     	     materialMsg_->clear_diffuse();
+     	   }
+     	   materialMsg_->set_allocated_diffuse(diffuseMsg_);
+
+            gzmsg  << " Random Goal " << name_ << std::endl;
+  			visualPub->Publish(visualMsg_);
+
+			//gzmsg << World->GetModel("LMAZE")->GetChildLink("LinkMainBasement")->
+
+
+
 	}
 
     // ******************************************************************************************************
@@ -703,6 +885,10 @@ namespace gazebo
 	void LmazePlugin::OnReset(const std_msgs::Bool::ConstPtr& msg){
 
 		// if goal position is randomized then again randomize
+		if (goalRandom) {
+			rnd();
+			//gzmsg << "changing color" << std::endl;
+		}
 
 		// else simple reset
 
@@ -711,7 +897,7 @@ namespace gazebo
   		std_msgs::Bool resetStatus;
 		resetStatus.data = TRUE;
 
-		ROS_INFO("  ############# RESET ############### Learner ");
+		//gzmsg << "  ############# RESET ############### Learner " << std::endl;
 	    if(resetMsg) {
 			// publish velocity reset for controller
 			pub.publish(resetStatus);
@@ -722,7 +908,7 @@ namespace gazebo
 	}
 	void LmazePlugin::OnPause(const std_msgs::Bool::ConstPtr& msg){
 	    bool pauseMsg = msg->data; 		
-		ROS_INFO("  ############# INITIALIZE ########## Learner ");
+		gzmsg << "  ############# INITIALIZE ########## Learner " << std::endl;
 		World->SetPaused(pauseMsg);
 	}
     // ******************************************************************************************************

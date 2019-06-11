@@ -74,14 +74,18 @@ void LmazeControllerPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf
 
     this->rosNode.reset(new ros::NodeHandle("LC"));
 
+	// to execute actions
     ros::SubscribeOptions so = ros::SubscribeOptions::create<geometry_msgs::Vector3>("/interface/action",1,boost::bind(&LmazeControllerPlugin::OnVelUpdate, this, _1),ros::VoidPtr(), &this->rosQueue);
     this->rosSub = this->rosNode->subscribe(so);
     this->rosQueueThread =  thread(std::bind(&LmazeControllerPlugin::QueueThread, this));
 
+	// to reset velocities
 	ros::SubscribeOptions so1 = ros::SubscribeOptions::create<std_msgs::Bool>("/LP/reset",1,boost::bind(&LmazeControllerPlugin::OnReset, this, _1),ros::VoidPtr(), &this->rosQueue1);
  	this->rosSub1 = this->rosNode->subscribe(so1);
 	this->rosQueueThread1 =  thread(std::bind(&LmazeControllerPlugin::QueueThread1, this));
 
+
+	// for gravity compensation
     ros::SubscribeOptions so2 = ros::SubscribeOptions::create<geometry_msgs::PoseStamped>("/BC/pose",1,boost::bind(&LmazeControllerPlugin::OnBallUpdate, this, _1),ros::VoidPtr(), &this->rosQueue2);
     this->rosSub2 = this->rosNode->subscribe(so2);
     this->rosQueueThread2 =  thread(std::bind(&LmazeControllerPlugin::QueueThread2, this));
@@ -89,7 +93,6 @@ void LmazeControllerPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf
 
 
     updateConnectionOn = event::Events::ConnectWorldUpdateBegin(boost::bind(&LmazeControllerPlugin::OnWorldUpdateBegin, this));
-
 	pub = rosNode->advertise<geometry_msgs::PoseStamped>("/LC/pose", 1);
 
     // ##################### Values for PID Controller #############################
@@ -176,18 +179,16 @@ void LmazeControllerPlugin::OnWorldUpdateBegin(){
     math::Vector3 worldTorque;
 
 	worldForce.x = this->controllers[0].Update(linearError.x, dt);
-    worldTorque.x = this->controllers[1].Update(angularError.x, dt);
+    worldTorque.x = this->controllers[1].Update(angularError.x, dt) + gcTorque.x;
     worldForce.y = this->controllers[2].Update(linearError.y, dt);
-    worldTorque.y = this->controllers[3].Update(angularError.y, dt);
+    worldTorque.y = this->controllers[3].Update(angularError.y, dt) + gcTorque.y;
     worldForce.z = this->controllers[4].Update(linearError.z, dt);
-    worldTorque.z = this->controllers[5].Update(angularError.z, dt);
-	//worldTorque.z = 0;
+    worldTorque.z = this->controllers[5].Update(angularError.z, dt) + gcTorque.z;
 
 	//ROS_INFO(" CONTROL TORQUE %f, %f, %f ", worldTorque.x , worldTorque.y , worldTorque.z );
 
     link->AddForce(worldForce);
-    link->AddTorque(worldTorque);
-
+    link->AddTorque(worldTorque+gcTorque);
 	}
 }
 
@@ -217,35 +218,24 @@ void LmazeControllerPlugin::QueueThread2()
 }
 void LmazeControllerPlugin::OnVelUpdate(const geometry_msgs::Vector3::ConstPtr& msg){
 	//ROS_INFO(" received velocity ");
-    /*_msg_x = msg->x/3; 	
-    _msg_y = msg->y/3;  
-    _msg_z = msg->z/3;*/
-
-    _msg_x = msg->x; 	
-    _msg_y = msg->y;  
-    _msg_z = msg->z;
-
-	c_msg_x = _msg_x;
-	c_msg_y = _msg_y;
-	c_msg_z = _msg_z;
+    c_msg_x = msg->x; 	
+    c_msg_y = msg->y;  
+    c_msg_z = msg->z;
 }
 void LmazeControllerPlugin::OnReset(const std_msgs::Bool::ConstPtr& msg){
-	ROS_INFO(" reset velocity ");
-	_msg_x = 0; 
-    _msg_y = 0;  
-    _msg_z = 0;
+	gzmsg << " reset velocity " << std::endl;
+	c_msg_x = 0; 
+    c_msg_y = 0;  
+    c_msg_z = 0;
 }
 
 void LmazeControllerPlugin::OnBallUpdate(const geometry_msgs::PoseStamped::ConstPtr& msg){
 	//ROS_INFO(" New Ball Pose ");
 
-    math::Vector3 gcTorque;
-
 	gcTorque.x = msg->pose.position.y*9.81;
 	gcTorque.y = -msg->pose.position.x*9.81;
 	gcTorque.z = 0;
-
-    link->AddTorque(gcTorque);
+    //link->AddTorque(gcTorque);
 }
 // Register this plugin with the simulator
 GZ_REGISTER_MODEL_PLUGIN(LmazeControllerPlugin)

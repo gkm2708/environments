@@ -3,12 +3,17 @@
 
 CMakeFiles/contact.dir/ball_plugin/ContactPlugin.cc.o: ../ball_plugin/ContactPlugin.cc
 CMakeFiles/contact.dir/ball_plugin/ContactPlugin.cc.o: ../ball_plugin/ContactPlugin.hh
+CMakeFiles/contact.dir/ball_plugin/ContactPlugin.cc.o: /opt/ros/kinetic/include/boost_161_condition_variable.h
+CMakeFiles/contact.dir/ball_plugin/ContactPlugin.cc.o: /opt/ros/kinetic/include/boost_161_pthread_condition_variable.h
+CMakeFiles/contact.dir/ball_plugin/ContactPlugin.cc.o: /opt/ros/kinetic/include/boost_161_pthread_condition_variable_fwd.h
 CMakeFiles/contact.dir/ball_plugin/ContactPlugin.cc.o: /opt/ros/kinetic/include/geometry_msgs/Vector3.h
 CMakeFiles/contact.dir/ball_plugin/ContactPlugin.cc.o: /opt/ros/kinetic/include/geometry_msgs/Vector3Stamped.h
 CMakeFiles/contact.dir/ball_plugin/ContactPlugin.cc.o: /opt/ros/kinetic/include/ros/advertise_options.h
 CMakeFiles/contact.dir/ball_plugin/ContactPlugin.cc.o: /opt/ros/kinetic/include/ros/advertise_service_options.h
 CMakeFiles/contact.dir/ball_plugin/ContactPlugin.cc.o: /opt/ros/kinetic/include/ros/assert.h
 CMakeFiles/contact.dir/ball_plugin/ContactPlugin.cc.o: /opt/ros/kinetic/include/ros/builtin_message_traits.h
+CMakeFiles/contact.dir/ball_plugin/ContactPlugin.cc.o: /opt/ros/kinetic/include/ros/callback_queue.h
+CMakeFiles/contact.dir/ball_plugin/ContactPlugin.cc.o: /opt/ros/kinetic/include/ros/callback_queue_interface.h
 CMakeFiles/contact.dir/ball_plugin/ContactPlugin.cc.o: /opt/ros/kinetic/include/ros/common.h
 CMakeFiles/contact.dir/ball_plugin/ContactPlugin.cc.o: /opt/ros/kinetic/include/ros/console.h
 CMakeFiles/contact.dir/ball_plugin/ContactPlugin.cc.o: /opt/ros/kinetic/include/ros/console_backend.h

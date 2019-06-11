@@ -12,7 +12,12 @@
 #include "std_msgs/String.h"
 #include "ros/ros.h"
 #include <chrono>
+#include <thread>
+#include "ros/callback_queue.h"
+#include "ros/subscribe_options.h"
+#include "geometry_msgs/Vector3.h"
 
+using namespace std;
 using namespace std::chrono;
 
 namespace gazebo
@@ -20,17 +25,23 @@ namespace gazebo
 	class ContactPlugin : public SensorPlugin
   	{
     	public:
- 
+ 			std::unique_ptr<ros::NodeHandle> rosNode;
+			ros::Subscriber rosSub;
+			ros::CallbackQueue rosQueue;
+			thread rosQueueThread;
+
 			//ContactPlugin();
 			//~ContactPlugin();
-
+			void OnReset(const geometry_msgs::Vector3::ConstPtr& msg);
 			ros::NodeHandle nh;
 			ros::Publisher pubReward;
 			//ros::Publisher pubGC;
 			void Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf);
-
+			int goal_i = -1;
+			int goal_j = -1;
     	private: 
-
+		    void QueueThread() ;
+	
 			sensors::ContactSensorPtr parentSensor;
 			event::ConnectionPtr updateConnection;
 

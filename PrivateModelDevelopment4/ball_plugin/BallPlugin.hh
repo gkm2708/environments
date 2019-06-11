@@ -4,14 +4,40 @@
 #include "gazebo/gazebo.hh"
 #include <gazebo/transport/transport.hh>
 #include <gazebo/msgs/msgs.hh>
-
+#include <thread>
+#include "ros/callback_queue.h"
+#include "ros/subscribe_options.h"
+#include "geometry_msgs/PoseStamped.h"
+#include "geometry_msgs/Vector3.h"
+#include "geometry_msgs/Vector3Stamped.h"
+#include "ros/ros.h"
+using namespace std;
 namespace gazebo
 {
 
 
 class BallPlugin : public WorldPlugin {
+private:
+
+		std::unique_ptr<ros::NodeHandle> rosNode;
+		ros::Subscriber rosSub;
+		ros::CallbackQueue rosQueue;
+		thread rosQueueThread;
     
+
 public :
+
+
+		    void QueueThread() ;
+
+			void OnReset(const geometry_msgs::Vector3::ConstPtr& msg);
+			int goal_i = -1;
+			int goal_j = -1;
+
+
+
+
+
     int MAZE_SIZE = 0;
 
     float scaleX = 0.05;
