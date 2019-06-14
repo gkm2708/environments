@@ -74,24 +74,25 @@ void BallPlugin::Load(physics::WorldPtr _parent, sdf::ElementPtr _sdf){
             <transparency>0</transparency> \
             <cast_shadows>0</cast_shadows> \
             </visual> \
+			<sensor name='my_contact' type='contact'> \
+			</sensor> \
 			</link>";
 
 
 
 /*
-<sensor name='my_contact' type='contact'> \
+
         	    <update_rate>30.0</update_rate> \
-			  		<contact> \
-				    	<collision>collision</collision> \
-			        </contact> \
-					<plugin name='my_plugin' filename='/homes/gkumar/rl/PrivateModelDevelopment4/build/libcontact.so'> \
-		        	    <update_rate>0</update_rate> \
-					</plugin> \
-        	   </sensor> \
+<contact> \
+				    <collision>collision</collision> \
+			    </contact> \
+<plugin name='my_plugin' filename='/homes/gkumar/rl/PrivateModelDevelopment4/build/libcontact.so'> \
+		        	<update_rate>0</update_rate> \
+				</plugin> \
 
 */
-    ending_tag = "<plugin name='ball_controller_plugin' filename='/homes/gkumar/rl/PrivateModelDevelopment4/build/libball_controller_plugin.so'> \
-		        	    <update_rate>30.0</update_rate> \
+    ending_tag = "<plugin name='ball_controller_plugin' filename='/homes/gkumar/rl/environments/PrivateModelDevelopment4/build/libball_controller_plugin.so'> \
+		        	    <update_rate>30</update_rate> \
 					</plugin> \
 					<static>0</static> \
             <allow_auto_disable>1</allow_auto_disable> \
@@ -191,7 +192,7 @@ void BallPlugin::Load(physics::WorldPtr _parent, sdf::ElementPtr _sdf){
           char **argv = NULL;
           ros::init(argc, argv, "BC",ros::init_options::NoSigintHandler);
      }
-	this->rosNode.reset(new ros::NodeHandle("CP"));
+	this->rosNode.reset(new ros::NodeHandle("BC"));
 
 	ros::SubscribeOptions so = ros::SubscribeOptions::create<geometry_msgs::Vector3>("/LP/goalPos",1,boost::bind(&BallPlugin::OnReset, this, _1),ros::VoidPtr(), &this->rosQueue);
 	this->rosSub = this->rosNode->subscribe(so);
@@ -199,20 +200,6 @@ void BallPlugin::Load(physics::WorldPtr _parent, sdf::ElementPtr _sdf){
 
 
 }
-
-void BallPlugin::OnReset(const geometry_msgs::Vector3::ConstPtr& msg){
-    goal_i = (int)msg->x; 	
-    goal_j = (int)msg->y;  
-}
-
-void BallPlugin::QueueThread()
-	{
-	    static const double timeout = 0.01;
-	    while (this->rosNode->ok())
-	    {
-	        this->rosQueue.callAvailable(ros::WallDuration(timeout));
-	    }
-	}
 
 void BallPlugin::OnWorldReset(){
 
@@ -248,6 +235,20 @@ void BallPlugin::OnWorldReset(){
     //gzmsg  << " Random ball pos " << pos_i << " " << pos_j << std::endl;
 
 }
+
+void BallPlugin::OnReset(const geometry_msgs::Vector3::ConstPtr& msg){
+    goal_i = (int)msg->x; 	
+    goal_j = (int)msg->y;  
+}
+
+void BallPlugin::QueueThread()
+	{
+	    static const double timeout = 0.01;
+	    while (this->rosNode->ok())
+	    {
+	        this->rosQueue.callAvailable(ros::WallDuration(timeout));
+	    }
+	}
 
 
 

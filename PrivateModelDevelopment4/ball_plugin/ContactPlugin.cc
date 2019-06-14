@@ -48,6 +48,7 @@ void ContactPlugin::Load(sensors::SensorPtr _sensor, sdf::ElementPtr /*_sdf*/) {
 //Reward -0.01 0 1
 void ContactPlugin::OnUpdate()
 {
+	/*
   	// Get all the contacts.
   	msgs::Contacts contacts;
   	contacts = this->parentSensor->Contacts();
@@ -76,7 +77,7 @@ void ContactPlugin::OnUpdate()
 
   	}
 		    reward3Dstamped.header.stamp = ros::Time::now();
-			pubReward.publish(reward3Dstamped);
+			pubReward.publish(reward3Dstamped);*/
 }
 
 
@@ -90,11 +91,11 @@ void ContactPlugin::OnUpdate()
 	}
 
 void ContactPlugin::OnReset(const geometry_msgs::Vector3::ConstPtr& msg){
-
+/*
     goal_i = (int)msg->x; 	
     goal_j = (int)msg->y;  
 	gzmsg << goal_i << " " << goal_j << std::endl;
-}
+*/}
 GZ_REGISTER_SENSOR_PLUGIN(ContactPlugin)
 }
 

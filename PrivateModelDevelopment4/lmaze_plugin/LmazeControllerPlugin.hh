@@ -54,13 +54,13 @@ class LmazeControllerPlugin : public ModelPlugin {
 	    void QueueThread() ;
 	    void QueueThread1() ;
 	    void QueueThread2() ;
-    	math::Vector3 gcTorque;
+
 	    physics::JointControllerPtr jointController;
 
 	    event::ConnectionPtr updateConnectionOn;
 
 	    std::vector<common::PID> controllers;
-	    std::string maze_filename = "/homes/gkumar/rl/PrivateModelDevelopment4/sample_labyrinth_maze.mz";
+	    std::string maze_filename = "/homes/gkumar/rl/environments/PrivateModelDevelopment4/sample_labyrinth_maze.mz";
 	    common::Time t0;
 	    common::Time t2;
 
@@ -77,6 +77,7 @@ class LmazeControllerPlugin : public ModelPlugin {
 	    physics::ModelPtr Model;
 	    physics::LinkPtr link;
 
+    	math::Vector3 gcTorque;
 };
 }
 

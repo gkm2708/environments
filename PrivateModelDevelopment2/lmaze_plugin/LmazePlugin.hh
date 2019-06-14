@@ -11,6 +11,14 @@
 #include "ros/callback_queue.h"
 #include "ros/subscribe_options.h"
 
+
+
+
+
+
+
+
+
 using namespace std;
 
 namespace gazebo
@@ -20,6 +28,7 @@ class LmazePlugin : public WorldPlugin {
 
 	private: 
 		std::unique_ptr<ros::NodeHandle> rosNode;
+
 		ros::Subscriber rosSub;
 		ros::Subscriber rosSub1;
 		ros::Subscriber rosSub2;

@@ -179,18 +179,20 @@ void LmazeControllerPlugin::OnWorldUpdateBegin(){
     math::Vector3 worldTorque;
 
 	worldForce.x = this->controllers[0].Update(linearError.x, dt);
-    worldTorque.x = this->controllers[1].Update(angularError.x, dt) + gcTorque.x;
+    worldTorque.x = this->controllers[1].Update(angularError.x, dt); // + gcTorque.x
     worldForce.y = this->controllers[2].Update(linearError.y, dt);
-    worldTorque.y = this->controllers[3].Update(angularError.y, dt) + gcTorque.y;
+    worldTorque.y = this->controllers[3].Update(angularError.y, dt); // + gcTorque.y
     worldForce.z = this->controllers[4].Update(linearError.z, dt);
-    worldTorque.z = this->controllers[5].Update(angularError.z, dt) + gcTorque.z;
+    worldTorque.z = this->controllers[5].Update(angularError.z, dt); // + gcTorque.z
 
 	//ROS_INFO(" CONTROL TORQUE %f, %f, %f ", worldTorque.x , worldTorque.y , worldTorque.z );
 
     link->AddForce(worldForce);
-    link->AddTorque(worldTorque+gcTorque);
+    link->AddTorque(worldTorque);
 	}
 }
+
+
 
 void LmazeControllerPlugin::QueueThread()
 {
@@ -217,16 +219,24 @@ void LmazeControllerPlugin::QueueThread2()
   }
 }
 void LmazeControllerPlugin::OnVelUpdate(const geometry_msgs::Vector3::ConstPtr& msg){
-	//ROS_INFO(" received velocity ");
-    c_msg_x = msg->x; 	
-    c_msg_y = msg->y;  
-    c_msg_z = msg->z;
+	//ROS_INFO(" received velocity [%f, %f, %f]",_msg_x, _msg_y, _msg_z);
+    /*_msg_x = msg->x/3; 	
+    _msg_y = msg->y/3;  
+    _msg_z = msg->z/3;*/
+
+    _msg_x = msg->x; 	
+    _msg_y = msg->y;  
+    _msg_z = msg->z;
+
+	c_msg_x = _msg_x;
+	c_msg_y = _msg_y;
+	c_msg_z = _msg_z;
 }
 void LmazeControllerPlugin::OnReset(const std_msgs::Bool::ConstPtr& msg){
 	gzmsg << " reset velocity " << std::endl;
-	c_msg_x = 0; 
-    c_msg_y = 0;  
-    c_msg_z = 0;
+	_msg_x = 0; 
+    _msg_y = 0;  
+    _msg_z = 0;
 }
 
 void LmazeControllerPlugin::OnBallUpdate(const geometry_msgs::PoseStamped::ConstPtr& msg){
@@ -235,7 +245,8 @@ void LmazeControllerPlugin::OnBallUpdate(const geometry_msgs::PoseStamped::Const
 	gcTorque.x = msg->pose.position.y*9.81;
 	gcTorque.y = -msg->pose.position.x*9.81;
 	gcTorque.z = 0;
-    //link->AddTorque(gcTorque);
+    
+	link->AddTorque(gcTorque);
 }
 // Register this plugin with the simulator
 GZ_REGISTER_MODEL_PLUGIN(LmazeControllerPlugin)

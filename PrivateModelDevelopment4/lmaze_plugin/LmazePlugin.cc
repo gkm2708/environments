@@ -44,7 +44,7 @@ namespace gazebo
 
 
 	std::string starting_tag = "<sdf version='1.6'><model name='LMAZE'>";
-	std::string ending_tag = "<plugin name='lmaze_controller_plugin' filename='/homes/gkumar/rl/PrivateModelDevelopment4/build/liblmaze_controller_plugin.so'> \
+	std::string ending_tag = "<plugin name='lmaze_controller_plugin' filename='/homes/gkumar/environments/rl/PrivateModelDevelopment4/build/liblmaze_controller_plugin.so'> \
 		        	    		<update_rate>0.0</update_rate> \
 							</plugin> \
         										<static>0</static> \
@@ -108,59 +108,6 @@ namespace gazebo
 
 
 
-
-void LmazePlugin::QueueThread2()
-{
-  static const double timeout = 0.01;
-  while (this->rosNode->ok())
-  {
-    this->rosQueue2.callAvailable(ros::WallDuration(timeout));
-  }
-}
-
-void LmazePlugin::OnBallUpdate(const geometry_msgs::PoseStamped::ConstPtr& msg){
-	//ROS_INFO(" New Ball Pose ");
-
-	ballPose.x = msg->pose.position.x;
-	ballPose.y = msg->pose.position.y;
-	ballPose.z = msg->pose.position.z;
-    //link->AddTorque(gcTorque);
-}
-
-
-void LmazePlugin::OnWorldUpdateBegin(){
-    //gzmsg << "LmazePlugin OnWorldUpdateBegin" << std::endl;
-
-  	geometry_msgs::Vector3Stamped reward3Dstamped;
-
-
-	if(ballPose.x <= ((MAZE_SIZE-2*goal_i)*scaleX/2) && 
-		ballPose.x >= ((MAZE_SIZE-2*goal_i-2)*scaleX/2) &&
-		ballPose.y <= ((MAZE_SIZE-2*goal_j)*scaleY/2) &&
-		ballPose.y >= ((MAZE_SIZE-2*goal_j-2)*scaleY/2) ){
-
-	//gzmsg << " goal " << std::endl;
- 	reward3Dstamped.vector.x = 1.0;
-	reward3Dstamped.vector.y = 0;
-	reward3Dstamped.vector.z = 0;
-	reward3Dstamped.header.stamp = ros::Time::now();
-	pubReward.publish(reward3Dstamped);
-	//World->SetPaused(1);
-	//std::this_thread::sleep_for(2);
-	//World->Reset();
-	//World->SetPaused(0);
-
-	} else {
- 	reward3Dstamped.vector.x = 0;
-	reward3Dstamped.vector.y = 0;
-	reward3Dstamped.vector.z = 0;
-	reward3Dstamped.header.stamp = ros::Time::now();
-	pubReward.publish(reward3Dstamped);
-	}
-
-
-}
-
     // ******************************************************************************************************
     // ********************************************** LOAD SDF **********************************************
     // ******************************************************************************************************
@@ -213,6 +160,27 @@ void LmazePlugin::OnWorldUpdateBegin(){
 		#endif
 			gzmsg << worldName << std::endl;
 	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -367,14 +335,6 @@ void LmazePlugin::OnWorldUpdateBegin(){
     	std::string colission_tag_until_end = "</size>\
             </box> \
             </geometry> \
-			<surface> \
-	        <friction> \
-	          <ode> \
-	            <mu>0.01</mu> \
-	            <mu2>0.01</mu2> \
-	          </ode> \
-	        </friction> \
-	        </surface> \
             </collision>";
 			// Finally add closing tag to decare it as one link
     	std::string link_tag_Outer10 = "</link>";
@@ -412,7 +372,14 @@ void LmazePlugin::OnWorldUpdateBegin(){
 	}
 
 
-
+/*			<surface> \
+	        <friction> \
+	          <ode> \
+	            <mu>0.01</mu> \
+	            <mu2>0.01</mu2> \
+	          </ode> \
+	        </friction> \
+	        </surface> \*/
 
     // ******************************************************************************************************
     // ***************************************   BUILD REST OF THE BOARD  ***********************************
@@ -473,15 +440,15 @@ void LmazePlugin::OnWorldUpdateBegin(){
     	std::string colission_tag_until_end = "</size>\
             </box> \
             </geometry> \
-			<surface> \
+            </collision>";
+/*			<surface> \
 	        <friction> \
 	          <ode> \
 	            <mu>0.01</mu> \
 	            <mu2>0.01</mu2> \
 	          </ode> \
 	        </friction> \
-	        </surface> \
-            </collision>";
+	        </surface> \*/
 			// FInally add closing tag to decare it as one link
     	std::string link_tag_Outer10 = "</link>";
 
@@ -566,16 +533,15 @@ void LmazePlugin::OnWorldUpdateBegin(){
 	    colission_tag_until_end = "</scale>\
 	            </mesh> \
 	            </geometry> \
-				<surface> \
+	            </collision>";
+/*				<surface> \
 	        <friction> \
 	          <ode> \
 	            <mu>0.01</mu> \
 	            <mu2>0.01</mu2> \
 	          </ode> \
 	        </friction> \
-	        </surface> \
-	            </collision>";
-	
+	        </surface> \*/	
 	    // Maze Links
 	    link_name = "Base_Tiles";
 	    std::string material = "";
@@ -612,7 +578,7 @@ void LmazePlugin::OnWorldUpdateBegin(){
 				// reduce load
 	            for (int j=0; j < MAZE_SIZE; j++){
 	                if (line.at(j) == '|' || line.at(j) == '_'){
-	                    resource_uri = "/homes/gkumar/rl/PrivateModelDevelopment4/models/cube.dae";
+	                    resource_uri = "/homes/gkumar/rl/environments/PrivateModelDevelopment4/models/cube.dae";
 	                    scale_xyz = std::to_string(scaleX) + std::to_string(scaleY) + std::to_string(floorHeight);
 	                    pose_3d = std::to_string((MAZE_SIZE-2*i)*scaleX/2 - scaleX) + " "
 	                            + std::to_string((MAZE_SIZE-2*j)*scaleY/2 - scaleY) + " "                                                   // Pose
@@ -642,7 +608,7 @@ void LmazePlugin::OnWorldUpdateBegin(){
 	                        + visual_tag_until_end;
 
 	                } else if (line.at(j) == 'O'){
-	                    resource_uri = "/homes/gkumar/rl/PrivateModelDevelopment4/models/cubePit.dae";
+	                    resource_uri = "/homes/gkumar/rl/environments/PrivateModelDevelopment4/models/cubePit.dae";
 	                    scale_xyz = std::to_string(scaleX) + std::to_string(scaleY) + std::to_string(floorThickness);
 	                    pose_3d = std::to_string((MAZE_SIZE-2*i)*scaleX/2 - scaleX) + " "
 	                            + std::to_string((MAZE_SIZE-2*j)*scaleY/2 - scaleY) + " "                                                   // Pose
@@ -662,7 +628,7 @@ void LmazePlugin::OnWorldUpdateBegin(){
 	                                + material
 	                        + visual_tag_until_end;
 	                } else if (line.at(j) == 'X'){
-	                    resource_uri = "/homes/gkumar/rl/PrivateModelDevelopment4/models/cubePit.dae";
+	                    resource_uri = "/homes/gkumar/rl/environments/PrivateModelDevelopment4/models/cubePit.dae";
 	                    scale_xyz = std::to_string(scaleX) + std::to_string(scaleY) + std::to_string(floorThickness);
 	                    pose_3d = std::to_string((MAZE_SIZE-2*i)*scaleX/2 - scaleX) + " "
 	                            + std::to_string((MAZE_SIZE-2*j)*scaleY/2 - scaleY) + " "                                                   // Pose
@@ -685,7 +651,7 @@ void LmazePlugin::OnWorldUpdateBegin(){
 	                                + material
 	                        + visual_tag_until_end;
 	                } else if (line.at(j) == 'S' || line.at(j) == ' ' || line.at(j) == 'X'){
-	                    resource_uri = "/homes/gkumar/rl/PrivateModelDevelopment4/models/cube.dae";
+	                    resource_uri = "/homes/gkumar/rl/environments/PrivateModelDevelopment4/models/cube.dae";
 	                    scale_xyz = std::to_string(scaleX) + std::to_string(scaleY) + std::to_string(floorThickness);
 	                    pose_3d = std::to_string((MAZE_SIZE-2*i)*scaleX/2 - scaleX) + " "
 	                            + std::to_string((MAZE_SIZE-2*j)*scaleY/2 - scaleY) + " "                                                   // Pose
@@ -748,7 +714,141 @@ void LmazePlugin::OnWorldUpdateBegin(){
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // ******************************************************************************************************
+    // ***********************************   BUILD ON DEMAND RESET OF  WORLD  *******************************
+    // ******************************************************************************************************
+
+
+	void LmazePlugin::OnReset(const std_msgs::Bool::ConstPtr& msg){
+
+		// if goal position is randomized then again randomize
+		if (goalRandom) {
+			rnd();
+			//gzmsg << "changing color" << std::endl;
+		}
+
+		// else simple reset
+
+	    bool resetMsg = msg->data;
+
+  		std_msgs::Bool resetStatus;
+		resetStatus.data = TRUE;
+
+		//gzmsg << "  ############# RESET ############### Learner " << std::endl;
+	    if(resetMsg) {
+			// publish velocity reset for controller
+			pub.publish(resetStatus);
+			World->SetPaused(resetMsg);
+			World->Reset();
+			World->SetPaused(!resetMsg);		// init msg says True to initialize hence fed as !initMsg to say SetPaused(False)
+		}
+	}
+
+
+
+
+
+
+
+
+
+
+    // ******************************************************************************************************
+    // **************************************************   ROS QUEUE  **************************************
+    // ******************************************************************************************************
+
+	void LmazePlugin::QueueThread()
+	{
+	    static const double timeout = 0.01;
+	    while (this->rosNode->ok())
+	    {
+	        this->rosQueue.callAvailable(ros::WallDuration(timeout));
+	    }
+	}
+	void LmazePlugin::QueueThread1()
+	{
+	    static const double timeout = 0.01;
+	    while (this->rosNode->ok())
+	    {
+	        this->rosQueue1.callAvailable(ros::WallDuration(timeout));
+	    }
+	}
+
+	void LmazePlugin::QueueThread2()
+	{
+		static const double timeout = 0.01;
+  		while (this->rosNode->ok())
+  		{
+    		this->rosQueue2.callAvailable(ros::WallDuration(timeout));
+  		}
+	}
 	 
+
+
 
 	void LmazePlugin::rnd(){
 
@@ -877,60 +977,51 @@ void LmazePlugin::OnWorldUpdateBegin(){
 
 	}
 
-    // ******************************************************************************************************
-    // ***********************************   BUILD ON DEMAND RESET OF  WORLD  *******************************
-    // ******************************************************************************************************
 
-
-	void LmazePlugin::OnReset(const std_msgs::Bool::ConstPtr& msg){
-
-		// if goal position is randomized then again randomize
-		if (goalRandom) {
-			rnd();
-			//gzmsg << "changing color" << std::endl;
-		}
-
-		// else simple reset
-
-	    bool resetMsg = msg->data;
-
-  		std_msgs::Bool resetStatus;
-		resetStatus.data = TRUE;
-
-		//gzmsg << "  ############# RESET ############### Learner " << std::endl;
-	    if(resetMsg) {
-			// publish velocity reset for controller
-			pub.publish(resetStatus);
-			World->SetPaused(resetMsg);
-			World->Reset();
-			World->SetPaused(!resetMsg);		// init msg says True to initialize hence fed as !initMsg to say SetPaused(False)
-		}
-	}
 	void LmazePlugin::OnPause(const std_msgs::Bool::ConstPtr& msg){
 	    bool pauseMsg = msg->data; 		
 		gzmsg << "  ############# INITIALIZE ########## Learner " << std::endl;
 		World->SetPaused(pauseMsg);
 	}
-    // ******************************************************************************************************
-    // **************************************************   ROS QUEUE  **************************************
-    // ******************************************************************************************************
 
-	void LmazePlugin::QueueThread()
-	{
-	    static const double timeout = 0.01;
-	    while (this->rosNode->ok())
-	    {
-	        this->rosQueue.callAvailable(ros::WallDuration(timeout));
-	    }
+
+	void LmazePlugin::OnBallUpdate(const geometry_msgs::PoseStamped::ConstPtr& msg){
+		//ROS_INFO(" New Ball Pose ");
+
+		ballPose.x = msg->pose.position.x;
+		ballPose.y = msg->pose.position.y;
+		ballPose.z = msg->pose.position.z;
+    	//link->AddTorque(gcTorque);
 	}
-	void LmazePlugin::QueueThread1()
-	{
-	    static const double timeout = 0.01;
-	    while (this->rosNode->ok())
-	    {
-	        this->rosQueue1.callAvailable(ros::WallDuration(timeout));
-	    }
-	}
+
+
+	void LmazePlugin::OnWorldUpdateBegin(){
+    	//gzmsg << "LmazePlugin OnWorldUpdateBegin" << std::endl;
+  		geometry_msgs::Vector3Stamped reward3Dstamped;
+		if(ballPose.x <= ((MAZE_SIZE-2*goal_i)*scaleX/2) && 
+			ballPose.x >= ((MAZE_SIZE-2*goal_i-2)*scaleX/2) &&
+			ballPose.y <= ((MAZE_SIZE-2*goal_j)*scaleY/2) &&
+			ballPose.y >= ((MAZE_SIZE-2*goal_j-2)*scaleY/2) ){
+
+			//gzmsg << " goal " << std::endl;
+ 			reward3Dstamped.vector.x = 1.0;
+			reward3Dstamped.vector.y = 0;
+			reward3Dstamped.vector.z = 0;
+			reward3Dstamped.header.stamp = ros::Time::now();
+			pubReward.publish(reward3Dstamped);
+			//World->SetPaused(1);
+			//std::this_thread::sleep_for(2);
+			//World->Reset();
+			//World->SetPaused(0);
+		} else {
+ 			reward3Dstamped.vector.x = 0;
+			reward3Dstamped.vector.y = 0;
+			reward3Dstamped.vector.z = 0;
+			reward3Dstamped.header.stamp = ros::Time::now();
+			pubReward.publish(reward3Dstamped);
+		}
+}
+
 // Register this plugin with the simulator
 GZ_REGISTER_WORLD_PLUGIN(LmazePlugin)
 }

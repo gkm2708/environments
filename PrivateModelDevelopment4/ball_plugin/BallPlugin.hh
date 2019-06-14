@@ -11,33 +11,24 @@
 #include "geometry_msgs/Vector3.h"
 #include "geometry_msgs/Vector3Stamped.h"
 #include "ros/ros.h"
+
+
 using namespace std;
 namespace gazebo
 {
 
 
 class BallPlugin : public WorldPlugin {
+
 private:
 
-		std::unique_ptr<ros::NodeHandle> rosNode;
-		ros::Subscriber rosSub;
-		ros::CallbackQueue rosQueue;
-		thread rosQueueThread;
+	std::unique_ptr<ros::NodeHandle> rosNode;
+	ros::Subscriber rosSub;
+	ros::CallbackQueue rosQueue;
+	thread rosQueueThread;
     
 
 public :
-
-
-		    void QueueThread() ;
-
-			void OnReset(const geometry_msgs::Vector3::ConstPtr& msg);
-			int goal_i = -1;
-			int goal_j = -1;
-
-
-
-
-
     int MAZE_SIZE = 0;
 
     float scaleX = 0.05;
@@ -46,7 +37,7 @@ public :
     float floorThickness = 0.001; 	// should be equal to z axis scaling of cube for floor Model; currently "0.0155"
     float floorHeight = 0.025; 	// should be equal to z axis scaling of cube for floor Model; currently "0.0155"
 
-    std::string maze_filename = "/homes/gkumar/rl/PrivateModelDevelopment4/sample_labyrinth_maze.mz";
+    std::string maze_filename = "/homes/gkumar/rl/environments/PrivateModelDevelopment4/sample_labyrinth_maze.mz";
     
     void Load(physics::WorldPtr _parent, sdf::ElementPtr _sdf);
 
@@ -63,5 +54,9 @@ public :
 	bool found;
 	void OnWorldReset();
 
+	void QueueThread() ;
+	void OnReset(const geometry_msgs::Vector3::ConstPtr& msg);
+	int goal_i = -1;
+	int goal_j = -1;
 };
 }

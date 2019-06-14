@@ -27,6 +27,11 @@
 #include "geometry_msgs/PoseStamped.h"
 #include "geometry_msgs/Vector3.h"
 #include "geometry_msgs/Vector3Stamped.h"
+
+
+
+
+
 using namespace std;
 
 namespace gazebo
@@ -41,28 +46,31 @@ class BallControllerPlugin : public ModelPlugin {
 		thread rosQueueThread;
 
 	public :
-		    void QueueThread() ;
-
-			void OnReset(const geometry_msgs::Vector3::ConstPtr& msg);
-			ros::Publisher pubReward;
-			int goal_i = -1;
-			int goal_j = -1;
-	    int MAZE_SIZE = 5;
-	    double cradius = 0.006;
-	    float scaleX = 0.05;
-	    float scaleY = 0.05;
-	    float groundOffset;
-
-	    float floorHeight = 0.025; 		// should be equal to z axis scaling of cube for Wall Model; currently "0.05"
-	    float floorThickness = 0.001; 	// should be equal to z axis scaling of cube for floor Model; currently "0.0155"
-	    std::string maze_filename = "/homes/gkumar/rl/PrivateModelDevelopment4/sample_labyrinth_maze.mz";
     	void Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf);
     	void OnWorldUpdateBegin();
 
     	physics::ModelPtr Model;
 		ros::NodeHandle nh;
 		ros::Publisher pub;
-
     	event::ConnectionPtr updateConnectionOn;
+
+
+		ros::Publisher pubReward;
+		int goal_i = -1;
+		int goal_j = -1;
+	    int MAZE_SIZE = 5;
+
+	    double cradius = 0.006;
+
+	    float scaleX = 0.05;
+	    float scaleY = 0.05;
+	    float groundOffset;
+	    float floorHeight = 0.025; 		// should be equal to z axis scaling of cube for Wall Model; currently "0.05"
+	    float floorThickness = 0.001; 	// should be equal to z axis scaling of cube for floor Model; currently "0.0155"
+
+	    std::string maze_filename = "/homes/gkumar/rl/environments/PrivateModelDevelopment4/sample_labyrinth_maze.mz";
+
+		void QueueThread() ;
+		void OnReset(const geometry_msgs::Vector3::ConstPtr& msg);
 };
 }

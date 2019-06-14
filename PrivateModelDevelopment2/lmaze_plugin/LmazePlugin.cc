@@ -23,6 +23,15 @@
 #include "std_msgs/String.h"
 #include "ros/ros.h"
 
+
+
+
+
+
+
+
+
+
 #if GAZEBO_MAJOR_VERSION >= 8
 namespace math = ignition::math;
 #else
@@ -76,6 +85,24 @@ namespace gazebo
 
 		pub = nh.advertise<std_msgs::Bool>("/LP/reset", 1);
 	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -256,6 +283,14 @@ namespace gazebo
 
 
 
+
+
+
+
+
+
+
+
     // ******************************************************************************************************
     // ****************************************   BUILD BASE BOARD LINK  ************************************
     // ******************************************************************************************************
@@ -335,6 +370,14 @@ namespace gazebo
 						</joint>";
 																							// joint to the JointSphere
 	}
+
+
+
+
+
+
+
+
 
 
 
@@ -757,6 +800,16 @@ namespace gazebo
 			World->SetPaused(!resetMsg);		// init msg says True to initialize hence fed as !initMsg to say SetPaused(False)
 		}
 	}
+
+
+
+
+
+
+
+
+
+
 	void LmazePlugin::OnInit(const std_msgs::Bool::ConstPtr& msg){
 	    bool initMsg = msg->data; 		
 		ROS_INFO("  ############# INITIALIZE ########## Learner ");

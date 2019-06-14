@@ -119,6 +119,9 @@ void LmazeControllerPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf
     }
 }
 
+
+
+
 void LmazeControllerPlugin::OnWorldUpdateBegin(){
 	//ROS_INFO(" CONTROL %f, %f, %f ", c_msg_x, c_msg_y, c_msg_z );
 	// Publish Maze Pose

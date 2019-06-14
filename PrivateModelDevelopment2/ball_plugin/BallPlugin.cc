@@ -26,6 +26,12 @@
 #include <gazebo/msgs/msgs.hh>
 #include <random>
 
+
+
+
+
+
+
 using namespace std;
 
 namespace gazebo
@@ -185,6 +191,14 @@ void BallPlugin::Load(physics::WorldPtr _parent, sdf::ElementPtr _sdf){
     } else {gzmsg << "filestream error";}
 	fs.close();
 }
+
+
+
+
+
+
+
+
 
 void BallPlugin::OnWorldReset(){
 

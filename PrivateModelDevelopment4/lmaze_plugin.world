@@ -18,11 +18,11 @@
 		<real_time_update_rate>1000</real_time_update_rate>
 	</physics>
 
-    <plugin name="lmaze_plugin" filename="/homes/gkumar/rl/PrivateModelDevelopment4/build/liblmaze_plugin.so">
+    <plugin name="lmaze_plugin" filename="/homes/gkumar/rl/environments/PrivateModelDevelopment4/build/liblmaze_plugin.so">
 		        	    <update_rate>0.0</update_rate> 
 	</plugin>
 
-	<plugin name="ball_plugin" filename="/homes/gkumar/rl/PrivateModelDevelopment4/build/libball_plugin.so">
+	<plugin name="ball_plugin" filename="/homes/gkumar/rl/environments/PrivateModelDevelopment4/build/libball_plugin.so">
 		        	    <update_rate>30.0</update_rate>
 	</plugin>
 
@@ -59,14 +59,14 @@
 					<far>5</far>
 	    		</clip>
           	</camera>
-          	<plugin name='camera_capture' filename='/homes/gkumar/rl/PrivateModelDevelopment4/build/libcamera_capture.so'>
+          	<plugin name='camera_capture' filename='/homes/gkumar/rl/environments/PrivateModelDevelopment4/build/libcamera_capture.so'>
         		<updateRate>0.0</updateRate>
 			</plugin>
         </sensor>
 		
 		<kinematic>true</kinematic>
       </link>
-      <plugin name="camera_follow" filename="/homes/gkumar/rl/PrivateModelDevelopment4/build/libcamera_follow.so">
+      <plugin name="camera_follow" filename="/homes/gkumar/rl/environments/PrivateModelDevelopment4/build/libcamera_follow.so">
 		<update_rate>30.0</update_rate> 
 	  </plugin> 
       <static>0</static>

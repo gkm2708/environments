@@ -115,7 +115,7 @@ void BallControllerPlugin::OnWorldUpdateBegin(){
 	pubReward.publish(reward3Dstamped);*/
 
 }
-
+/*
 void BallControllerPlugin::QueueThread()
 	{
 	    static const double timeout = 0.01;
@@ -124,7 +124,7 @@ void BallControllerPlugin::QueueThread()
 	        this->rosQueue.callAvailable(ros::WallDuration(timeout));
 	    }
 	}
-
+*/
 /*void BallControllerPlugin::OnReset(const geometry_msgs::Vector3::ConstPtr& msg){
     goal_i = (int)msg->x; 	
     goal_j = (int)msg->y;  

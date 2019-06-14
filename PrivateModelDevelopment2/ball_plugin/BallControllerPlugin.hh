@@ -27,6 +27,11 @@
 #include "geometry_msgs/PoseStamped.h"
 
 
+
+
+
+
+
 using namespace std;
 
 namespace gazebo
@@ -47,7 +52,6 @@ class BallControllerPlugin : public ModelPlugin {
     	physics::ModelPtr Model;
 		ros::NodeHandle nh;
 		ros::Publisher pub;
-
     	event::ConnectionPtr updateConnectionOn;
 };
 }

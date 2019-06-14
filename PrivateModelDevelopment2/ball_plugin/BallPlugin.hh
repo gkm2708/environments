@@ -5,12 +5,29 @@
 #include <gazebo/transport/transport.hh>
 #include <gazebo/msgs/msgs.hh>
 
+
+
+
+
+
+
+
+
+
 namespace gazebo
 {
 
 
 class BallPlugin : public WorldPlugin {
     
+
+
+
+
+
+
+
+
 public :
     int MAZE_SIZE = 0;
 

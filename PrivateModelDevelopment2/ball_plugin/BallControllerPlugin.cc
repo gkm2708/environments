@@ -58,6 +58,23 @@ void BallControllerPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 	pub = nh.advertise<geometry_msgs::PoseStamped>("/BC/pose", 1);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void BallControllerPlugin::OnWorldUpdateBegin(){
     //gzmsg << "BallControllerPlugin OnWorldUpdateBegin" << std::endl;
 

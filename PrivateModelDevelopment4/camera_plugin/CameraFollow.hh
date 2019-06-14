@@ -57,7 +57,7 @@ class CameraFollow : public ModelPlugin {
 
     	physics::ModelPtr Model;
 
-    std::string maze_filename = "/homes/gkumar/rl/PrivateModelDevelopment4/sample_labyrinth_maze.mz";
+    std::string maze_filename = "/homes/gkumar/rl/environments/PrivateModelDevelopment4/sample_labyrinth_maze.mz";
 
     	ignition::math::Pose3d _poseBall;
     	ignition::math::Pose3d _poseMaze;
