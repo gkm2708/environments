@@ -98,6 +98,7 @@ class LmazePlugin : public WorldPlugin {
 		transport::NodePtr gzNode;
     	event::ConnectionPtr updateConnectionOn;
     	math::Vector3 ballPose;
+		int rewardCounter;
 };
 }
 

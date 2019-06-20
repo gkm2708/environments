@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/homes/gkumar/rl/PrivateModelDevelopment4/camera_plugin/CameraCapture.cc" "/homes/gkumar/rl/PrivateModelDevelopment4/build/CMakeFiles/camera_capture.dir/camera_plugin/CameraCapture.cc.o"
+  "/homes/gkumar/rl/environments/PrivateModelDevelopment4/camera_plugin/CameraCapture.cc" "/homes/gkumar/rl/environments/PrivateModelDevelopment4/build/CMakeFiles/camera_capture.dir/camera_plugin/CameraCapture.cc.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 
@@ -16,7 +16,6 @@ set(CMAKE_TARGET_DEFINITIONS_CXX
 
 # The include file search paths:
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
-  "/usr/include/opencv"
   "/opt/ros/kinetic/include"
   "/opt/ros/kinetic/share/xmlrpcpp/cmake/../../../include/xmlrpcpp"
   "/usr/include/gazebo-7"
@@ -25,6 +24,8 @@ set(CMAKE_CXX_TARGET_INCLUDE_PATH
   "/usr/include/OGRE"
   "/usr/include/OGRE/Terrain"
   "/usr/include/OGRE/Paging"
+  "/opt/ros/kinetic/include/opencv-3.3.1-dev"
+  "/opt/ros/kinetic/include/opencv-3.3.1-dev/opencv"
   )
 
 # Targets to which this target links.

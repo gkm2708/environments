@@ -44,7 +44,7 @@ namespace gazebo
 
 
 	std::string starting_tag = "<sdf version='1.6'><model name='LMAZE'>";
-	std::string ending_tag = "<plugin name='lmaze_controller_plugin' filename='/homes/gkumar/environments/rl/PrivateModelDevelopment4/build/liblmaze_controller_plugin.so'> \
+	std::string ending_tag = "<plugin name='lmaze_controller_plugin' filename='/homes/gkumar/rl/environments/PrivateModelDevelopment4/build/liblmaze_controller_plugin.so'> \
 		        	    		<update_rate>0.0</update_rate> \
 							</plugin> \
         										<static>0</static> \
@@ -103,6 +103,9 @@ namespace gazebo
 		}
 	    updateConnectionOn = event::Events::ConnectWorldUpdateBegin(boost::bind(&LmazePlugin::OnWorldUpdateBegin, this));
     	gzmsg << "Load LMaze Model" << std::endl;
+
+
+		rewardCounter = 0;
 	}
 
 
@@ -159,6 +162,7 @@ namespace gazebo
     		std::string worldName = World->GetName();
 		#endif
 			gzmsg << worldName << std::endl;
+		
 	}
 
 
@@ -1001,7 +1005,8 @@ namespace gazebo
 		if(ballPose.x <= ((MAZE_SIZE-2*goal_i)*scaleX/2) && 
 			ballPose.x >= ((MAZE_SIZE-2*goal_i-2)*scaleX/2) &&
 			ballPose.y <= ((MAZE_SIZE-2*goal_j)*scaleY/2) &&
-			ballPose.y >= ((MAZE_SIZE-2*goal_j-2)*scaleY/2) ){
+			ballPose.y >= ((MAZE_SIZE-2*goal_j-2)*scaleY/2) &&
+			rewardCounter == 0){
 
 			//gzmsg << " goal " << std::endl;
  			reward3Dstamped.vector.x = 1.0;
@@ -1009,16 +1014,21 @@ namespace gazebo
 			reward3Dstamped.vector.z = 0;
 			reward3Dstamped.header.stamp = ros::Time::now();
 			pubReward.publish(reward3Dstamped);
+			rewardCounter = 1;
 			//World->SetPaused(1);
 			//std::this_thread::sleep_for(2);
 			//World->Reset();
 			//World->SetPaused(0);
-		} else {
+		} else if(	(ballPose.x >= ((MAZE_SIZE-2*goal_i)*scaleX/2) || 
+			ballPose.x <= ((MAZE_SIZE-2*goal_i-2)*scaleX/2) ||
+			ballPose.y >= ((MAZE_SIZE-2*goal_j)*scaleY/2) ||
+			ballPose.y <= ((MAZE_SIZE-2*goal_j-2)*scaleY/2))) {
  			reward3Dstamped.vector.x = 0;
 			reward3Dstamped.vector.y = 0;
 			reward3Dstamped.vector.z = 0;
 			reward3Dstamped.header.stamp = ros::Time::now();
 			pubReward.publish(reward3Dstamped);
+			rewardCounter = 0;
 		}
 }
 
