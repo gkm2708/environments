@@ -82,6 +82,18 @@ void BallControllerPlugin::OnWorldUpdateBegin(){
 	geometry_msgs::PoseStamped pose_stamped;
     pose_stamped.header.stamp = ros::Time::now();
 
+
+#if GAZEBO_MAJOR_VERSION >= 8
+
+	math::Pose3d ballPose = Model->WorldPose();
+	pose_stamped.pose.position.x = ballPose.Pos().X();
+	pose_stamped.pose.position.y = ballPose.Pos().Y();
+	pose_stamped.pose.position.z = ballPose.Pos().Z();
+	pose_stamped.pose.orientation.x = ballPose.Rot().X();
+	pose_stamped.pose.orientation.y = ballPose.Rot().Y();
+	pose_stamped.pose.orientation.z = ballPose.Rot().Z();
+	pose_stamped.pose.orientation.w = ballPose.Rot().W();
+#else
 	pose_stamped.pose.position.x = Model->GetWorldPose().pos.x;
 	pose_stamped.pose.position.y = Model->GetWorldPose().pos.y;
 	pose_stamped.pose.position.z = Model->GetWorldPose().pos.z;
@@ -89,6 +101,7 @@ void BallControllerPlugin::OnWorldUpdateBegin(){
 	pose_stamped.pose.orientation.y = Model->GetWorldPose().rot.y;
 	pose_stamped.pose.orientation.z = Model->GetWorldPose().rot.z;
 	pose_stamped.pose.orientation.w = Model->GetWorldPose().rot.w;
+#endif
 
 	pub.publish(pose_stamped);
 

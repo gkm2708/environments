@@ -167,7 +167,15 @@ void CameraFollow::OnWorldUpdateBegin(){
 	refTransform = refTransform.inverse();
 	relTransform = refTransform.inverseTimes(offsetTransform);
 
-
+#if GAZEBO_MAJOR_VERSION >= 8
+	Model->SetWorldPose(math::Pose3d(			relTransform.getOrigin().getX(),
+												relTransform.getOrigin().getY(),
+												relTransform.getOrigin().getZ(),
+												relTransform.getRotation().getW(),
+												relTransform.getRotation().getX(),
+												relTransform.getRotation().getY(),
+												relTransform.getRotation().getZ()));
+#else
 	Model->SetWorldPose(math::Pose(
 											math::Vector3(
 												relTransform.getOrigin().getX(),
@@ -178,6 +186,7 @@ void CameraFollow::OnWorldUpdateBegin(){
 												relTransform.getRotation().getX(),
 												relTransform.getRotation().getY(),
 												relTransform.getRotation().getZ())));
+#endif
 
     Model->SetAngularVel(ignition::math::Vector3d(0,0,0));
     Model->SetLinearVel(ignition::math::Vector3d(0,0,0));

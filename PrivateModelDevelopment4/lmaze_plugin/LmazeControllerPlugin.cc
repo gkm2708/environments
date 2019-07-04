@@ -104,7 +104,7 @@ void LmazeControllerPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf
     double linear_i = 1;
     double linear_d = 0.1;
     double linear_imax = 1.0;
-    double angular_p = 60.0;
+    double angular_p = 100.0;
     double angular_i = 1;
     double angular_d = 0.1;
 	double angular_imax = 0.5;
@@ -112,7 +112,7 @@ void LmazeControllerPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf
     double _maxTorque = 100.0;
     double _maxForce = 50.0;
   
-    link = Model->GetLink("LinkMainBasement");
+    link = Model->GetLink("LinkMaze");
 
     for (int i = 0; i < 3; i++)  {
         common::PID controller_translation(linear_p, linear_i, linear_d, linear_imax, -linear_imax, _maxForce, -_maxForce);
@@ -125,6 +125,7 @@ void LmazeControllerPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf
 void LmazeControllerPlugin::OnWorldUpdateBegin(){
 	//ROS_INFO(" CONTROL CYCLE");
 	// Publish Maze Pose
+
 	geometry_msgs::PoseStamped pose_stamped;
     pose_stamped.header.stamp = ros::Time::now();
   	pose_stamped.pose.position.x = link->GetWorldPose().pos.x;
@@ -136,59 +137,59 @@ void LmazeControllerPlugin::OnWorldUpdateBegin(){
 	pose_stamped.pose.orientation.w = link->GetWorldPose().rot.w;    
 	pub.publish(pose_stamped);
 
-	math::Quaternion _orient = math::Quaternion(link->GetWorldPose().rot.x,
-												link->GetWorldPose().rot.y,
-												link->GetWorldPose().rot.z, 
-												link->GetWorldPose().rot.w);
+	math::Quaternion _orient = math::Quaternion(pose_stamped.pose.orientation.x,
+												pose_stamped.pose.orientation.y,
+												pose_stamped.pose.orientation.z, 
+												pose_stamped.pose.orientation.w);
 	math::Vector3 _or = _orient.GetAsEuler();
 
     // ##################### Values for PID Controller #############################
 
 	if(c_msg_x != 0 || c_msg_y != 0 || c_msg_z != 0) {
 
-	// find dt from last to current step
-    common::Time t1 = common::Time::GetWallTime();
-	common::Time dt = t1 - t0;
-    double dtd = (t1 - t0).common::Time::Double();
-    t0 = common::Time::GetWallTime();
+		// find dt from last to current step
+	    common::Time t1 = common::Time::GetWallTime();
+		common::Time dt = t1 - t0;
+	    double dtd = (t1 - t0).common::Time::Double();
+	    t0 = common::Time::GetWallTime();
 	
-	double _cx = Model->GetWorldPose().pos.x;
-	double _cy = Model->GetWorldPose().pos.y;
-	double _cz = Model->GetWorldPose().pos.z;
+		// Model's Current position
+		double _cx = Model->GetWorldPose().pos.x;
+		double _cy = Model->GetWorldPose().pos.y;
+		double _cz = Model->GetWorldPose().pos.z;
 
-	double _xt = ( _cx - InitialPos.x)/dtd;
-    double _yt = ( _cy - InitialPos.y)/dtd;
-    double _zt = ( _cz - InitialPos.z)/dtd;
+		// error between current and initial position divided by time lapse 
+		// gives the velocity with which the board is falling down under gravity
+		double _xt = ( _cx - InitialPos.x)/dtd;
+	    double _yt = ( _cy - InitialPos.y)/dtd;
+	    double _zt = ( _cz - InitialPos.z)/dtd;
 
-	double _yawt = -(_or.z/dtd);
 
-    // Calculate the error between actual and target velocities
-    math::Vector3 curLinearVel = link->GetWorldLinearVel();
-    math::Vector3 targetLinearVel = math::Vector3(-_xt,-_yt,-_zt);
-    math::Vector3 linearError = curLinearVel - targetLinearVel;
+	    // Calculate the error between actual and target linear velocities
+	    math::Vector3 curLinearVel = link->GetWorldLinearVel();
+	    math::Vector3 targetLinearVel = math::Vector3(-_xt,-_yt,-_zt);
+	    math::Vector3 linearError = curLinearVel - targetLinearVel;
 	
-    math::Vector3 curAngularVel = link->GetWorldAngularVel();
-    math::Vector3 targetAngularVel = math::Vector3(c_msg_x, c_msg_y, -curAngularVel.z);
-    //math::Vector3 targetAngularVel = math::Vector3(c_msg_x, c_msg_y, 0);
-    //math::Vector3 targetAngularVel = math::Vector3(c_msg_x, c_msg_y, _yawt);
-    //math::Vector3 targetAngularVel = math::Vector3(c_msg_x, c_msg_y, -_or.z);
-    math::Vector3 angularError = curAngularVel - targetAngularVel;
+	    // Calculate the error between actual and target Angular velocities
+	    math::Vector3 curAngularVel = link->GetWorldAngularVel();
+	    math::Vector3 targetAngularVel = math::Vector3(5*c_msg_x, 5*c_msg_y, -curAngularVel.z);
+	    math::Vector3 angularError = curAngularVel - targetAngularVel;
 	
-    // Get forces to apply from controllers
-    math::Vector3 worldForce;
-    math::Vector3 worldTorque;
+	    // Get forces to apply from controllers
+	    math::Vector3 worldForce;
+	    math::Vector3 worldTorque;
 
-	worldForce.x = this->controllers[0].Update(linearError.x, dt);
-    worldTorque.x = this->controllers[1].Update(angularError.x, dt); // + gcTorque.x
-    worldForce.y = this->controllers[2].Update(linearError.y, dt);
-    worldTorque.y = this->controllers[3].Update(angularError.y, dt); // + gcTorque.y
-    worldForce.z = this->controllers[4].Update(linearError.z, dt);
-    worldTorque.z = this->controllers[5].Update(angularError.z, dt); // + gcTorque.z
+		worldForce.x = this->controllers[0].Update(linearError.x, dt);
+	    worldTorque.x = this->controllers[1].Update(angularError.x, dt); // + gcTorque.x;
+	    worldForce.y = this->controllers[2].Update(linearError.y, dt);
+	    worldTorque.y = this->controllers[3].Update(angularError.y, dt); // + gcTorque.y;
+	    worldForce.z = this->controllers[4].Update(linearError.z, dt);
+	    worldTorque.z = this->controllers[5].Update(angularError.z, dt); // + gcTorque.z
+	
+		//gzmsg << " Control Internal " << worldForce.x << " " << worldForce.y << " " << worldForce.z << " " << worldTorque.x << " " << worldTorque.y << " " << worldTorque.z <<  std::endl;
 
-	//ROS_INFO(" CONTROL TORQUE %f, %f, %f ", worldTorque.x , worldTorque.y , worldTorque.z );
-
-    link->AddForce(worldForce);
-    link->AddTorque(worldTorque);
+	    link->AddForce(worldForce);
+	    link->AddTorque(worldTorque);
 	}
 }
 
@@ -220,9 +221,7 @@ void LmazeControllerPlugin::QueueThread2()
 }
 void LmazeControllerPlugin::OnVelUpdate(const geometry_msgs::Vector3::ConstPtr& msg){
 	//ROS_INFO(" received velocity [%f, %f, %f]",_msg_x, _msg_y, _msg_z);
-    /*_msg_x = msg->x/3; 	
-    _msg_y = msg->y/3;  
-    _msg_z = msg->z/3;*/
+	//gzmsg << " set velocity " << _msg_x << " " << _msg_y << " "<< _msg_z << std::endl;
 
     _msg_x = msg->x; 	
     _msg_y = msg->y;  
@@ -245,9 +244,53 @@ void LmazeControllerPlugin::OnBallUpdate(const geometry_msgs::PoseStamped::Const
 	gcTorque.x = msg->pose.position.y*9.81;
 	gcTorque.y = -msg->pose.position.x*9.81;
 	gcTorque.z = 0;
+
+
+	//gcTorque.x = msg->pose.position.y*9.81*(4/3*3.14*0.015*0.015*0.015);
+	//gcTorque.y = -msg->pose.position.x*9.81*(4/3*3.14*0.015*0.015*0.015);
+	//gcTorque.z = 0;
     
 	link->AddTorque(gcTorque);
 }
 // Register this plugin with the simulator
 GZ_REGISTER_MODEL_PLUGIN(LmazeControllerPlugin)
 }
+
+
+		// check if your board has gone beyond limits and apply velocities only if not.
+
+		/*if( _or.y > 0.001 ) 		{ c_msg_x = -2*(_or.y - 0.001); gzmsg << " Condition 1 " << _or.y << ", " << c_msg_x << std::endl;}
+		else if( _or.y < -0.001 ) 	{ c_msg_x = 2*(_or.y + 0.001); 	gzmsg << " Condition 2 " << _or.y << ", " << c_msg_x << std::endl;} 
+		else 						{								gzmsg << _or.y << ", " << c_msg_x << std::endl;}
+
+		if( _or.x > 0.001 ) 		{ c_msg_y = -2*(_or.x - 0.001); gzmsg << " Condition 3 " << _or.x << ", " << c_msg_y << std::endl;}
+		else if( _or.x < -0.001 ) 	{ c_msg_y = 2*(_or.x + 0.001); 	gzmsg << " Condition 4 " << _or.x << ", " << c_msg_y << std::endl;} 
+		else 						{								gzmsg << _or.x << ", " << c_msg_y << std::endl;}
+		*/
+		//if(_or.y >= 0 && _msg_x > 0 && _msg_y == 0) { c_msg_x = 2*(_or.y - _msg_x); 	gzmsg << " Rev Condition 1 " << _or.y << ", " << c_msg_x << std::endl;}
+		//if(_or.y <= 0 && _msg_x < 0 && _msg_y == 0) { c_msg_x = 2*(_or.y - _msg_x); 	gzmsg << " Rev Condition 2 " << _or.y << ", " << c_msg_x << std::endl;}		
+		//if(_or.x >= 0 && _msg_y > 0 && _msg_x == 0) { c_msg_y = 2*(_or.y - _msg_y); 	gzmsg << " Rev Condition 3 " << _or.x << ", " << c_msg_y << std::endl;}
+		//if(_or.x <= 0 && _msg_y < 0 && _msg_x == 0) { c_msg_y = 2*(_or.y - _msg_y); 	gzmsg << " Rev Condition 4 " << _or.x << ", " << c_msg_y << std::endl;}
+
+
+	/*
+	gzmsg << " Model Pose " << Model->GetWorldPose() << std::endl;
+	gzmsg << " Link Pose " << link->GetWorldPose() << std::endl;
+	gzmsg << " Link Pose " << link->GetWorldPose().pos.x << " " << link->GetWorldPose().pos.y << " " << link->GetWorldPose().pos.z << " "
+			<< link->GetWorldPose().rot.x << " " << link->GetWorldPose().rot.y << " "<< link->GetWorldPose().rot.z << " "<< link->GetWorldPose().rot.w << std::endl;
+
+	if(c_msg_x > 0)
+		link->SetWorldPose(math::Pose(math::Vector3(link->GetWorldPose().pos.x, link->GetWorldPose().pos.y, link->GetWorldPose().pos.z),
+							math::Quaternion(0.087, 0, 0, 0.996)));
+	if(c_msg_x < 0)
+		link->SetWorldPose(math::Pose(math::Vector3(link->GetWorldPose().pos.x, link->GetWorldPose().pos.y, link->GetWorldPose().pos.z),
+							math::Quaternion(-0.087, 0, 0, 0.996)));
+	if(c_msg_y > 0)
+		link->SetWorldPose(math::Pose(math::Vector3(link->GetWorldPose().pos.x, link->GetWorldPose().pos.y, link->GetWorldPose().pos.z),
+							math::Quaternion(0, 0.087, 0, 0.996)));
+	if(c_msg_y < 0)
+		link->SetWorldPose(math::Pose(math::Vector3(link->GetWorldPose().pos.x, link->GetWorldPose().pos.y, link->GetWorldPose().pos.z),
+							math::Quaternion(0, -0.087, 0, 0.996)));
+	*/
+	//double _yawt = -(_or.z/dtd);
+

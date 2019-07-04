@@ -64,7 +64,6 @@ class LmazeControllerPlugin : public ModelPlugin {
 	    common::Time t0;
 	    common::Time t2;
 
-	    math::Vector3 InitialPos;
 	    int MAZE_SIZE = 0;
 	    float _msg_x, _msg_y, _msg_z;
 	    float _torque_x, _torque_y, _torque_z;
@@ -76,8 +75,15 @@ class LmazeControllerPlugin : public ModelPlugin {
 	    std::string centerLink;
 	    physics::ModelPtr Model;
 	    physics::LinkPtr link;
-
+#if GAZEBO_MAJOR_VERSION >= 8
+    	math::Vector3d gcTorque;
+		math::Vector3d InitialPos;
+#else
     	math::Vector3 gcTorque;
+		math::Vector3 InitialPos;
+
+#endif
+
 };
 }
 

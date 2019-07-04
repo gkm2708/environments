@@ -858,7 +858,17 @@ namespace gazebo
 			std::string name = "LMAZE::LinkMainBasement::Base_Tiles"+std::to_string(goal_i)+"_"+std::to_string(goal_j);
 			msgs::Visual visualMsg;
   			visualMsg.set_name(name);
+
+
+		#if GAZEBO_MAJOR_VERSION >= 8
+  			visualMsg.set_parent_name(World->Name());
+		#else
   			visualMsg.set_parent_name(World->GetName());
+		#endif
+
+
+
+
     		visualMsg.set_transparency(0);
 
 			// Initiate material
@@ -943,7 +953,12 @@ namespace gazebo
 			std::string name_ = "LMAZE::LinkMainBasement::Base_Tiles"+std::to_string(goal_i)+"_"+std::to_string(goal_j);
 			msgs::Visual visualMsg_;
   			visualMsg_.set_name(name_);
-  			visualMsg_.set_parent_name(World->GetName());
+		#if GAZEBO_MAJOR_VERSION >= 8
+  			visualMsg.set_parent_name(World->Name());
+		#else
+  			visualMsg.set_parent_name(World->GetName());
+		#endif
+
     		visualMsg_.set_transparency(0);
 
 			// Initiate material
@@ -990,9 +1005,20 @@ namespace gazebo
 	void LmazePlugin::OnBallUpdate(const geometry_msgs::PoseStamped::ConstPtr& msg){
 		//ROS_INFO(" New Ball Pose ");
 
+		#if GAZEBO_MAJOR_VERSION >= 8
+		ballPose = math::Vector3d(msg->pose.position.x, msg->pose.position.y, msg->pose.position.z);
+
+		//ballPose.X = msg->pose.position.x;
+		//ballPose.Y = msg->pose.position.y;
+		//ballPose.Z = msg->pose.position.z;
+		#else
 		ballPose.x = msg->pose.position.x;
 		ballPose.y = msg->pose.position.y;
 		ballPose.z = msg->pose.position.z;
+		#endif
+
+
+
     	//link->AddTorque(gcTorque);
 	}
 
@@ -1000,6 +1026,33 @@ namespace gazebo
 	void LmazePlugin::OnWorldUpdateBegin(){
     	//gzmsg << "LmazePlugin OnWorldUpdateBegin" << std::endl;
   		geometry_msgs::Vector3Stamped reward3Dstamped;
+
+		#if GAZEBO_MAJOR_VERSION >= 8
+		if(ballPose.X() <= ((MAZE_SIZE-2*goal_i)*scaleX/2) && 
+			ballPose.X() >= ((MAZE_SIZE-2*goal_i-2)*scaleX/2) &&
+			ballPose.Y() <= ((MAZE_SIZE-2*goal_j)*scaleY/2) &&
+			ballPose.Y() >= ((MAZE_SIZE-2*goal_j-2)*scaleY/2) ){
+
+			//gzmsg << " goal " << std::endl;
+ 			reward3Dstamped.vector.x = 1.0;
+			reward3Dstamped.vector.y = episodeNum;
+			reward3Dstamped.vector.z = 0;
+			reward3Dstamped.header.stamp = ros::Time::now();
+			pubReward.publish(reward3Dstamped);
+			//World->SetPaused(1);
+			//std::this_thread::sleep_for(2);
+			//World->Reset();
+			//World->SetPaused(0);
+		} else {
+ 			reward3Dstamped.vector.x = 0;
+			reward3Dstamped.vector.y = episodeNum;
+			reward3Dstamped.vector.z = 0;
+			reward3Dstamped.header.stamp = ros::Time::now();
+			pubReward.publish(reward3Dstamped);
+		}
+		#else
+
+
 		if(ballPose.x <= ((MAZE_SIZE-2*goal_i)*scaleX/2) && 
 			ballPose.x >= ((MAZE_SIZE-2*goal_i-2)*scaleX/2) &&
 			ballPose.y <= ((MAZE_SIZE-2*goal_j)*scaleY/2) &&
@@ -1022,6 +1075,7 @@ namespace gazebo
 			reward3Dstamped.header.stamp = ros::Time::now();
 			pubReward.publish(reward3Dstamped);
 		}
+		#endif
 }
 
 // Register this plugin with the simulator

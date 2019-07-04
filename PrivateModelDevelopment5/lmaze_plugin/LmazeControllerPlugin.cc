@@ -3,6 +3,8 @@
 #include "LmazeControllerPlugin.hh"
 
 #include <ignition/math/Pose3.hh>
+#include <ignition/math/Quaternion.hh>
+
 
 #include "gazebo/physics/physics.hh"
 #include "gazebo/common/common.hh"
@@ -43,13 +45,7 @@ void LmazeControllerPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf
 
     Model = _parent;
 
-#if GAZEBO_MAJOR_VERSION >= 8
-    std::string modelName = Model->GetName();
-//    math::Vector3d InitialPos = Model->WorldPose().Pos();
-#else
-    std::string modelName = Model->GetName();
-//    math::Vector3 InitialPos = Model->GetWorldPose().pos;
-#endif
+
 
 	    double cradius = 0.006;
 	    float scaleX = 0.05;
@@ -58,8 +54,17 @@ void LmazeControllerPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf
 	    float floorHeight = 0.025; 		// should be equal to z axis scaling of cube for Wall Model; currently "0.05"
 	    float floorThickness = 0.001; 	// should be equal to z axis scaling of cube for floor Model; currently "0.0155"
 
+#if GAZEBO_MAJOR_VERSION >= 8
+    std::string modelName = Model->GetName();
+//    math::Vector3d InitialPos = Model->WorldPose().Pos();
+	InitialPos = math::Vector3d(MAZE_SIZE*scaleX/2, MAZE_SIZE*scaleY/2, groundOffset+2*cradius+floorThickness/2);
 
+#else
+    std::string modelName = Model->GetName();
+//    math::Vector3 InitialPos = Model->GetWorldPose().pos;
 	InitialPos = math::Vector3(MAZE_SIZE*scaleX/2, MAZE_SIZE*scaleY/2, groundOffset+2*cradius+floorThickness/2);
+
+#endif
 
 
 	gzmsg << modelName << std::endl;
@@ -127,20 +132,25 @@ void LmazeControllerPlugin::OnWorldUpdateBegin(){
 	// Publish Maze Pose
 	geometry_msgs::PoseStamped pose_stamped;
     pose_stamped.header.stamp = ros::Time::now();
-  	pose_stamped.pose.position.x = link->GetWorldPose().pos.x;
-	pose_stamped.pose.position.y = link->GetWorldPose().pos.y;
-	pose_stamped.pose.position.z = link->GetWorldPose().pos.z;
-	pose_stamped.pose.orientation.x = link->GetWorldPose().rot.x;
-	pose_stamped.pose.orientation.y = link->GetWorldPose().rot.y;
-	pose_stamped.pose.orientation.z = link->GetWorldPose().rot.z;
-	pose_stamped.pose.orientation.w = link->GetWorldPose().rot.w;    
+
+#if GAZEBO_MAJOR_VERSION >= 8
+	math::Pose3d linkPose = link->WorldPose();
+  	pose_stamped.pose.position.x = linkPose.Pos().X();
+	pose_stamped.pose.position.y = linkPose.Pos().Y();
+	pose_stamped.pose.position.z = linkPose.Pos().Z();
+	pose_stamped.pose.orientation.x = linkPose.Rot().X();
+	pose_stamped.pose.orientation.y = linkPose.Rot().Y();
+	pose_stamped.pose.orientation.z = linkPose.Rot().Z();
+	pose_stamped.pose.orientation.w = linkPose.Rot().W();    
+
+	math::Quaterniond _orient = math::Quaterniond(linkPose.Rot().W(),
+												linkPose.Rot().X(),
+												linkPose.Rot().Y(), 
+												linkPose.Rot().Z());
+	math::Vector3d _or = _orient.Euler();
+
 	pub.publish(pose_stamped);
 
-	math::Quaternion _orient = math::Quaternion(link->GetWorldPose().rot.x,
-												link->GetWorldPose().rot.y,
-												link->GetWorldPose().rot.z, 
-												link->GetWorldPose().rot.w);
-	math::Vector3 _or = _orient.GetAsEuler();
 
     // ##################### Values for PID Controller #############################
 
@@ -151,11 +161,92 @@ void LmazeControllerPlugin::OnWorldUpdateBegin(){
 	common::Time dt = t1 - t0;
     double dtd = (t1 - t0).common::Time::Double();
     t0 = common::Time::GetWallTime();
-	
-	double _cx = Model->GetWorldPose().pos.x;
-	double _cy = Model->GetWorldPose().pos.y;
-	double _cz = Model->GetWorldPose().pos.z;
 
+
+	math::Pose3d modelPose = Model->WorldPose();
+	double _cx = modelPose.Pos().X();
+	double _cy = modelPose.Pos().Y();
+	double _cz = modelPose.Pos().Z();
+	double _xt = ( _cx - InitialPos.X())/dtd;
+    double _yt = ( _cy - InitialPos.Y())/dtd;
+    double _zt = ( _cz - InitialPos.Z())/dtd;
+
+
+	double _yawt = -(_or.Z()/dtd);
+
+    // Calculate the error between actual and target velocities
+    math::Vector3d curLinearVel = link->WorldLinearVel();
+    math::Vector3d targetLinearVel = math::Vector3d(-_xt,-_yt,-_zt);
+    math::Vector3d linearError = curLinearVel - targetLinearVel;
+	
+    math::Vector3d curAngularVel = link->WorldAngularVel();
+    math::Vector3d targetAngularVel = math::Vector3d(c_msg_x, c_msg_y, -curAngularVel.Z());
+    //math::Vector3 targetAngularVel = math::Vector3(c_msg_x, c_msg_y, 0);
+    //math::Vector3 targetAngularVel = math::Vector3(c_msg_x, c_msg_y, _yawt);
+    //math::Vector3 targetAngularVel = math::Vector3(c_msg_x, c_msg_y, -_or.z);
+    math::Vector3d angularError = curAngularVel - targetAngularVel;
+	
+    // Get forces to apply from controllers
+    math::Vector3d worldForce = math::Vector3d(this->controllers[0].Update(linearError.X(), dt),
+												this->controllers[2].Update(linearError.Y(), dt),
+												this->controllers[4].Update(linearError.Z(), dt));
+    math::Vector3d worldTorque = math::Vector3d(this->controllers[1].Update(angularError.X(), dt),
+												this->controllers[3].Update(angularError.Y(), dt),
+												this->controllers[5].Update(angularError.Z(), dt));
+
+
+
+
+	/*worldForce.x = this->controllers[0].Update(linearError.X(), dt);
+    worldTorque.x = this->controllers[1].Update(angularError.X(), dt); // + gcTorque.x
+    #worldForce.y = this->controllers[2].Update(linearError.Y(), dt);
+    #worldTorque.y = this->controllers[3].Update(angularError.Y(), dt); // + gcTorque.y
+    #worldForce.z = this->controllers[4].Update(linearError.Z(), dt);
+    #worldTorque.z = this->controllers[5].Update(angularError.Z(), dt); // + gcTorque.z
+
+	ROS_INFO(" CONTROL TORQUE %f, %f, %f ", worldTorque.x , worldTorque.y , worldTorque.z );*/
+
+    link->AddForce(worldForce);
+    link->AddTorque(worldTorque);
+	}
+
+
+#else
+	math::Pose3 linkPose = link->GetWorldPose();
+  	pose_stamped.pose.position.x = linkPose.pos.x;
+	pose_stamped.pose.position.y = linkPose.pos.y;
+	pose_stamped.pose.position.z = linkPose.pos.z;
+	pose_stamped.pose.orientation.x = linkPose.rot.x;
+	pose_stamped.pose.orientation.y = linkPose.rot.y;
+	pose_stamped.pose.orientation.z = linkPose.rot.z;
+	pose_stamped.pose.orientation.w = linkPose.rot.w;    
+
+	math::Quaternion _orient = math::Quaternion(linkPose.rot.x,
+												linkPose.rot.y,
+												linkPose.rot.z, 
+												linkPose.rot.w);
+	math::Vector3 _or = _orient.GetAsEuler();
+
+
+
+	pub.publish(pose_stamped);
+
+
+    // ##################### Values for PID Controller #############################
+
+	if(c_msg_x != 0 || c_msg_y != 0 || c_msg_z != 0) {
+
+	// find dt from last to current step
+    common::Time t1 = common::Time::GetWallTime();
+	common::Time dt = t1 - t0;
+    double dtd = (t1 - t0).common::Time::Double();
+    t0 = common::Time::GetWallTime();
+
+
+	math::Pose3 modelPose = Model->GetWorldPose();
+	double _cx = modelPose.pos.x;
+	double _cy = modelPose.pos.y;
+	double _cz = modelPose.pos.z;
 	double _xt = ( _cx - InitialPos.x)/dtd;
     double _yt = ( _cy - InitialPos.y)/dtd;
     double _zt = ( _cz - InitialPos.z)/dtd;
@@ -169,9 +260,6 @@ void LmazeControllerPlugin::OnWorldUpdateBegin(){
 	
     math::Vector3 curAngularVel = link->GetWorldAngularVel();
     math::Vector3 targetAngularVel = math::Vector3(c_msg_x, c_msg_y, -curAngularVel.z);
-    //math::Vector3 targetAngularVel = math::Vector3(c_msg_x, c_msg_y, 0);
-    //math::Vector3 targetAngularVel = math::Vector3(c_msg_x, c_msg_y, _yawt);
-    //math::Vector3 targetAngularVel = math::Vector3(c_msg_x, c_msg_y, -_or.z);
     math::Vector3 angularError = curAngularVel - targetAngularVel;
 	
     // Get forces to apply from controllers
@@ -190,6 +278,8 @@ void LmazeControllerPlugin::OnWorldUpdateBegin(){
     link->AddForce(worldForce);
     link->AddTorque(worldTorque);
 	}
+#endif
+
 }
 
 
@@ -242,9 +332,16 @@ void LmazeControllerPlugin::OnReset(const std_msgs::Bool::ConstPtr& msg){
 void LmazeControllerPlugin::OnBallUpdate(const geometry_msgs::PoseStamped::ConstPtr& msg){
 	//ROS_INFO(" New Ball Pose ");
 
-	gcTorque.x = msg->pose.position.y*9.81;
-	gcTorque.y = -msg->pose.position.x*9.81;
-	gcTorque.z = 0;
+#if GAZEBO_MAJOR_VERSION >= 8
+	gcTorque = math::Vector3d(msg->pose.position.y*9.81, -msg->pose.position.x*9.81, 0);
+#else
+	gcTorque = math::Vector3(msg->pose.position.y*9.81, -msg->pose.position.x*9.81, 0);
+
+	//gcTorque.x = msg->pose.position.y*9.81;
+	//gcTorque.y = -msg->pose.position.x*9.81;
+	//gcTorque.z = 0;
+#endif
+
     
 	link->AddTorque(gcTorque);
 }

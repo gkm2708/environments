@@ -32,6 +32,13 @@
 #include "geometry_msgs/PoseStamped.h"
 
 
+
+#if GAZEBO_MAJOR_VERSION >= 8
+namespace math = ignition::math;
+#else
+namespace math = gazebo::math;
+#endif
+
 using namespace std;
 
 namespace gazebo
@@ -223,11 +230,20 @@ void BallPlugin::OnWorldReset(){
 	pos_j = temp.front();
 
 	if(pos_i != goal_i && pos_j != goal_j){
-		Model = World->GetModel("BALL");
-		Model->SetWorldPose( math::Pose( 	(MAZE_SIZE-2*pos_i)*scaleX/2 - scaleX/2, 
+		
+		#if GAZEBO_MAJOR_VERSION >= 8
+			Model = World->ModelByName("BALL");
+			Model->SetWorldPose( math::Pose3d( 	(MAZE_SIZE-2*pos_i)*scaleX/2 - scaleX/2, 
 										(MAZE_SIZE-2*pos_j)*scaleY/2 - scaleY/2, 
 										MAZE_SIZE*scaleX+2*cradius+2*floorThickness+floorHeight+0.005+0.005,
 										0, 0, 0 ) );
+		#else
+			Model = World->GetModel("BALL");
+			Model->SetWorldPose( math::Pose( 	(MAZE_SIZE-2*pos_i)*scaleX/2 - scaleX/2, 
+										(MAZE_SIZE-2*pos_j)*scaleY/2 - scaleY/2, 
+										MAZE_SIZE*scaleX+2*cradius+2*floorThickness+floorHeight+0.005+0.005,
+										0, 0, 0 ) );
+		#endif
 
 	}else {OnWorldReset();}
 

@@ -44,13 +44,13 @@ namespace gazebo
 
 
 	std::string starting_tag = "<sdf version='1.6'><model name='LMAZE'>";
-	std::string ending_tag = "<plugin name='lmaze_controller_plugin' filename='/homes/gkumar/rl/environments/PrivateModelDevelopment4/build/liblmaze_controller_plugin.so'> \
-		        	    		<update_rate>0.0</update_rate> \
-							</plugin> \
-        										<static>0</static> \
-        										<allow_auto_disable>1</allow_auto_disable> \
-        										</model>\
-        										</sdf>";
+	std::string ending_tag = "	<plugin name='lmaze_controller_plugin' filename='/homes/gkumar/rl/environments/PrivateModelDevelopment4/build/liblmaze_controller_plugin.so'> \
+		        	    			<update_rate>0.0</update_rate> \
+							  	</plugin> \
+        					  	<static>0</static> \
+        						<allow_auto_disable>1</allow_auto_disable> \
+        					  </model>\
+        					  </sdf>";
 
     // ******************************************************************************************************
     // ************************************************* LOAD  **********************************************
@@ -81,10 +81,6 @@ namespace gazebo
 	    ros::SubscribeOptions so = ros::SubscribeOptions::create<std_msgs::Bool>("/interface/reset",1,boost::bind(&LmazePlugin::OnReset, this, _1),ros::VoidPtr(), &this->rosQueue);
 	    this->rosSub = this->rosNode->subscribe(so);
 	    this->rosQueueThread =  thread(std::bind(&LmazePlugin::QueueThread, this));
-
-	    /*ros::SubscribeOptions so1 = ros::SubscribeOptions::create<std_msgs::Bool>("/interface/initialize",1,boost::bind(&LmazePlugin::OnInit, this, _1),ros::VoidPtr(), &this->rosQueue1);
-	    this->rosSub1 = this->rosNode->subscribe(so1);
-	    this->rosQueueThread1 =  thread(std::bind(&LmazePlugin::QueueThread1, this));*/
 
 	    ros::SubscribeOptions so2 = ros::SubscribeOptions::create<geometry_msgs::PoseStamped>("/BC/pose",1,boost::bind(&LmazePlugin::OnBallUpdate, this, _1),ros::VoidPtr(), &this->rosQueue2);
 	    this->rosSub2 = this->rosNode->subscribe(so2);
@@ -136,13 +132,7 @@ namespace gazebo
     	    fs.close();
 
     	    tempSDF = tempSDF + drawKinObj("0 0 0.0005 0 -0 0");                                                           // a kinematic only object with no physics for the base
-
     	    tempSDF = tempSDF + drawJointSphere(); 																		// draw a sphere at the center of cylinder
-
-			tempSDF = tempSDF + drawBaseBoard("0 0 "
-    	                                     + std::to_string(groundOffset+2*cradius+floorThickness/2)
-    	                                     + " 0 -0 0"); 																// draw basement and walls evenly
-
     	    tempSDF = tempSDF + drawBasement("0 0 "
     	                                     + std::to_string(groundOffset+2*cradius+floorThickness+floorHeight/2)
     	                                     + " 0 -0 0"); 																// draw basement and walls evenly
@@ -166,28 +156,6 @@ namespace gazebo
 	}
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     // ******************************************************************************************************
     // *************************************   BUILD KINEMATIC ONLY LINK  ***********************************
     // ******************************************************************************************************
@@ -207,34 +175,6 @@ namespace gazebo
             						</link>";
 	} 
 
-	std::string LmazePlugin::drawCylObj(std::string pose) {
-    				return 		"<link name='LinkCylObj'><kinematic>true</kinematic>  \
-						 			<pose>"
-            					+ pose
-            					+ "</pose> \
-            						<collision name='collisionCyl'> \
-            						<geometry><cylinder>\
-									<radius>"
-								+ std::to_string(MAZE_SIZE/2*scaleX)
-								+	"</radius>\
-									<length>"
-								+ std::to_string(MAZE_SIZE*3/32*scaleX)
-								+	"</length>\
-									</cylinder></geometry> \
-            						<surface><friction><ode><mu>0.1</mu><mu2>0</mu2></ode></friction></surface> \
-            						</collision> \
-            						</link> \
-									<self_collide>true</self_collide>";
-//					            + "<joint name='JointCylBase' type='fixed'><parent>ground_plane:link</parent><child>linkCylObj</child></joint>";
-	} 
-
-
-
-
-    // ******************************************************************************************************
-    // *******************************************   BUILD JOINT SPHERE  ************************************
-    // ******************************************************************************************************
-	// A sphere at a (X, Y, Z) i.e. a function of maze size
 
 
 	std::string LmazePlugin::drawJointSphere()	{
@@ -293,18 +233,12 @@ namespace gazebo
 	}
 
 
-
-
-    // ******************************************************************************************************
-    // ****************************************   BUILD BASE BOARD LINK  ************************************
-    // ******************************************************************************************************
-
-
-	std::string LmazePlugin::drawBaseBoard(std::string pose){
+	std::string LmazePlugin::drawBasement(std::string pose){
 
 	    std::string link_tag_Outer = "<link name='";
 			//  + linkName
-		std::string link_tag_Outer1 = "'><pose frame=''> ";
+		std::string link_tag_Outer1 = "'> \
+			<pose frame=''> ";
 			//	+ Above JointSphere
     	std::string link_tag_Outer2 = "</pose>";
 			//	+ Iterate over below tags for multiple collission and visuals
@@ -328,7 +262,6 @@ namespace gazebo
             <transparency>0</transparency> \
             <cast_shadows>0</cast_shadows> \
             </visual>";
-
     		// +
     	std::string colission_tag_until_name = "<collision name='";
     		//colission name
@@ -343,128 +276,39 @@ namespace gazebo
 			// Finally add closing tag to decare it as one link
     	std::string link_tag_Outer10 = "</link>";
 
+
+
 	    std::string scale_xyz = std::to_string(scaleX*MAZE_SIZE) + " " 
 							+ std::to_string(scaleY*MAZE_SIZE) + " " 
 							+ std::to_string(floorThickness);
 
-		// Touch This carefully ;)
-    	return link_tag_Outer																									//  Only the outer link value
-		            + "LinkBaseBoard"
-            + link_tag_Outer1
-					+ pose
-            + link_tag_Outer2
-            + colission_tag_until_name																							// Collission tag for base board
+
+    	std::string tempSDF = "";
+
+		// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++   Base Board Visual/Colission   +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+            tempSDF = tempSDF + colission_tag_until_name																		// Collission tag for base board
 		            + "BASEMENT_COLISSION_BASE"
             + colission_tag_until_pose
-		            + "0 0 0 0 -0 0"                                                                         					//
+		            + "0 0 "+std::to_string(-1*floorHeight/2)+" 0 -0 0"                                                                         					//
             + colission_tag_until_size
 		            + scale_xyz
             + colission_tag_until_end
             + visual_tag_until_name																								// visual tag for base board
 		            + "BASEMENT_VISUAL_BASE"
             + visual_tag_until_pose
-		            + "0 0 0 0 -0 0"                                                                                			//
+		            + "0 0 "+std::to_string(-1*floorHeight/2)+" 0 -0 0"                                                                                			//
             + visual_tag_until_size
 		            + scale_xyz                                                          										// size
-            + visual_tag_until_end
-            + link_tag_Outer10																								 	// finished link
-            		+ "<joint name='JointBaseBoard' type='ball'>\
-							<parent>LinkJointSphere</parent>\
-							<child>LinkBaseBoard</child>\
-						</joint>";
-																							// joint to the JointSphere
-	}
+            + visual_tag_until_end;
 
 
-/*			<surface> \
-	        <friction> \
-	          <ode> \
-	            <mu>0.01</mu> \
-	            <mu2>0.01</mu2> \
-	          </ode> \
-	        </friction> \
-	        </surface> \*/
+		// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++   Basement Wall Visual/Colission   +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    	//std::string scale_xyz = std::to_string(scaleX) + " " + std::to_string(scaleY) + " " + std::to_string(floorHeight);
+    	scale_xyz = std::to_string(scaleX) + " " + std::to_string(scaleY) + " " + std::to_string(floorHeight);
 
-    // ******************************************************************************************************
-    // ***************************************   BUILD REST OF THE BOARD  ***********************************
-    // ******************************************************************************************************
-
-
-	// A Maze board consisting of 
-	//								a base board, (As one link for collission detection)
-	//								side walls,
-	//								and top board with pits or solid surface 
-	//											with unit drawn from samplele_labyrinth_maze.mz file
-	//											as one single link
-
-	/*
-	<inertial> \
-            <mass>7.85</mass> \
-			</inertial> \
-	*/
-
-
-	std::string LmazePlugin::drawBasement(std::string pose){
-
-	    std::string link_tag_Outer = "<link name='";
-			//  + linkName
-		std::string link_tag_Outer1 = "'> \
-			<pose frame=''> ";
-			//	+ Above JointSphere
-    	std::string link_tag_Outer2 = "</pose>";
-			//	+ Iterate over below tags for multiple collission and visuals
-    	std::string visual_tag_until_name = "<visual name='";
-    		//  + visual name
-    	std::string visual_tag_until_pose = "'><pose>";
-		    //  + visual pose
-	    std::string visual_tag_until_size = "</pose> <geometry> <box> <size>";
-    		//	+ visual size as in scaling factor
-    	std::string visual_tag_until_end = "</size>\
-            </box> \
-            </geometry> \
-            <material> \
-            <lighting>1</lighting> \
-            <script> \
-            <uri>file://media/materials/scripts/gazebo.material</uri> \
-            <name>Gazebo/Yellow</name> \
-            </script> \
-            <shader type='pixel'/> \
-            </material> \
-            <transparency>0</transparency> \
-            <cast_shadows>0</cast_shadows> \
-            </visual>";
-
-    		// +
-    	std::string colission_tag_until_name = "<collision name='";
-    		//colission name
-    	std::string colission_tag_until_pose = "'><pose>";
-    		//collision pose
-    	std::string colission_tag_until_size = "</pose><geometry> <box> <size>";
-    		//collision name
-    	std::string colission_tag_until_end = "</size>\
-            </box> \
-            </geometry> \
-            </collision>";
-/*			<surface> \
-	        <friction> \
-	          <ode> \
-	            <mu>0.01</mu> \
-	            <mu2>0.01</mu2> \
-	          </ode> \
-	        </friction> \
-	        </surface> \*/
-			// FInally add closing tag to decare it as one link
-    	std::string link_tag_Outer10 = "</link>";
-
-			// Build temp as intermediate collission and visual object 
-    	std::string tempSDF = "";
-
-
-			// size of walls making the basement
-    	std::string scale_xyz = std::to_string(scaleX) + " " + std::to_string(scaleY) + " " + std::to_string(floorHeight);
 		std::string link_name = "Basement_Walls_";
 
-		// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++   BUILD WALLS   +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 			// Outer wall building loop
     	for (int i=MAZE_SIZE-1; i >= 0; i--){
     	    for (int j=0, k=MAZE_SIZE-1; j < MAZE_SIZE; j++, k--){
@@ -538,48 +382,30 @@ namespace gazebo
 	            </mesh> \
 	            </geometry> \
 	            </collision>";
-/*				<surface> \
-	        <friction> \
-	          <ode> \
-	            <mu>0.01</mu> \
-	            <mu2>0.01</mu2> \
-	          </ode> \
-	        </friction> \
-	        </surface> \*/	
+
 	    // Maze Links
+
 	    link_name = "Base_Tiles";
 	    std::string material = "";
 	    std::string resource_uri = "";
 	    std::string pose_3d = "";
 	    std::string line = "";
 	    std::fstream fs;
-		//int goal_i = -1;
-		//int goal_j = -1;
 	
 	
 		// ++++++++++++++++++++++++++++++++++++++++++++++++++++++   REDEFINE VARIABLES FOR MAZE BASE   +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	
-
-		// Read file
-		// if goal block not found
-		// then randomize.
-		// else fixed
 	
 	    fs.open(maze_filename, std::fstream::in);
 	
 	    if (fs.good()) {
 	
-//	        for (int i=MAZE_SIZE-1; i >= 0; i--){ // Outer-Most Loop
 	        for (int i=0; i < MAZE_SIZE; i++){ // Outer-Most Loop
 	            // check filestream
 	            if (!std::getline(fs, line)) {
 	                gzmsg  << "getline failed" << std::endl;
 	                break;
 	            }
-	            // maze base
-				// publish base "base_colission_name" for contact plugin
-				// enable collide without contact for other links except goal block
-				// reduce load
 	            for (int j=0; j < MAZE_SIZE; j++){
 	                if (line.at(j) == '|' || line.at(j) == '_'){
 	                    resource_uri = "/homes/gkumar/rl/environments/PrivateModelDevelopment4/models/cube.dae";
@@ -694,24 +520,41 @@ namespace gazebo
 	    
 	
 		    return link_tag_Outer
-    	        +"LinkMainBasement"
+    	        +"LinkMaze"
     	        + link_tag_Outer1
     	        + pose
     	        + link_tag_Outer2
     	        + tempSDF
     	        + link_tag_Outer10
-    	        + "<joint name='JointBasementSphere' type='fixed'><parent>LinkBaseBoard</parent><child>LinkMainBasement</child></joint>";
+    	        + 	"<joint name='JointBasementSphere' type='universal'>\
+							<parent>LinkJointSphere</parent>\
+							<child>LinkMaze</child>\
+							<axis>\
+								<xyz>1 0 0</xyz>\
+								<limit>\
+									<lower>-0.1</lower>\
+									<upper>0.1</upper>\
+								</limit>\
+							</axis>\
+							<axis2>\
+								<xyz>0 1 0</xyz>\
+								<limit>\
+									<lower>-0.1</lower>\
+									<upper>0.1</upper>\
+								</limit>\
+							</axis2>\
+					</joint>";
 
 
 		} else {
 		    return link_tag_Outer
-    	        +"LinkMainBasement"
+    	        +"LinkMaze"
     	        + link_tag_Outer1
     	        + pose
     	        + link_tag_Outer2
     	        + tempSDF
     	        + link_tag_Outer10
-    	        + "<joint name='JointBasementSphere' type='fixed'><parent>LinkBaseBoard</parent><child>LinkMainBasement</child></joint>";
+    	        + "<joint name='JointBasementSphere' type='ball'><parent>LinkJointSphere</parent><child>LinkMaze</child></joint>";
 		}
 
 	}

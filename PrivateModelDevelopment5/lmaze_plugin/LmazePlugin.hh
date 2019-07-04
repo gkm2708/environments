@@ -19,6 +19,13 @@
 #include "ros/subscribe_options.h"
 #include "geometry_msgs/Vector3Stamped.h"
 
+
+#if GAZEBO_MAJOR_VERSION >= 8
+namespace math = ignition::math;
+#else
+namespace math = gazebo::math;
+#endif
+
 using namespace std;
 
 namespace gazebo
@@ -97,7 +104,13 @@ class LmazePlugin : public WorldPlugin {
 		transport::PublisherPtr visualPub;
 		transport::NodePtr gzNode;
     	event::ConnectionPtr updateConnectionOn;
+
+#if GAZEBO_MAJOR_VERSION >= 8
+    	math::Vector3d ballPose;
+#else
     	math::Vector3 ballPose;
+#endif
+
 		int episodeNum;
 };
 }
