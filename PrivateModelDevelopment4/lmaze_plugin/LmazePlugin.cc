@@ -852,7 +852,7 @@ namespace gazebo
 			rewardCounter == 0){
 
 			//gzmsg << " goal " << std::endl;
- 			reward3Dstamped.vector.x = 1.0;
+ 			reward3Dstamped.vector.x = 0.0;
 			reward3Dstamped.vector.y = 0;
 			reward3Dstamped.vector.z = 0;
 			reward3Dstamped.header.stamp = ros::Time::now();
@@ -866,7 +866,7 @@ namespace gazebo
 			ballPose.x <= ((MAZE_SIZE-2*goal_i-2)*scaleX/2) ||
 			ballPose.y >= ((MAZE_SIZE-2*goal_j)*scaleY/2) ||
 			ballPose.y <= ((MAZE_SIZE-2*goal_j-2)*scaleY/2))) {
- 			reward3Dstamped.vector.x = 0;
+ 			reward3Dstamped.vector.x = -1.0;
 			reward3Dstamped.vector.y = 0;
 			reward3Dstamped.vector.z = 0;
 			reward3Dstamped.header.stamp = ros::Time::now();
